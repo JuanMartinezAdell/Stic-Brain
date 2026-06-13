@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.data.repository.IncidenciaRepository
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -22,7 +24,7 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
 
     // Flow que combina todas las incidencias o las filtradas por búsqueda
     val incidencias: StateFlow<List<IncidenciaEntity>> = _searchQuery
-        .debounce(300L)
+        .debounce(300.milliseconds)
         .flatMapLatest { query ->
             if (query.isBlank()) {
                 repository.getAll()
