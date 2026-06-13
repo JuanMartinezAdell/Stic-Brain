@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +27,8 @@ fun HomeScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToNewIncident: () -> Unit,
     onNavigateToSupport: () -> Unit,
+    onNavigateToCategories: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onNavigateToIncidentDetail: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -49,11 +52,28 @@ fun HomeScreen(
         ) {
             SticTopHeader(
                 title = "Stic Brain",
-                subtitle = "Base de conocimiento TIC · Hospital"
+                subtitle = "Base de conocimiento TIC · Hospital",
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Ajustes", tint = SticWhite)
+                    }
+                }
             )
             
             Column(modifier = Modifier.padding(16.dp)) {
                 StatsSection(incidencias)
+                
+                Button(
+                    onClick = onNavigateToCategories,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SticSky),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = SticBlue)
+                    Spacer(Modifier.width(8.dp))
+                    Text(text = "Gestionar categorías", color = SticBlue, fontWeight = FontWeight.Bold)
+                }
+
                 FilterSection(categorias)
                 IncidentsListSection(incidencias, onIncidentClick = onNavigateToIncidentDetail)
             }
@@ -203,6 +223,8 @@ fun HomeScreenPreview() {
         onNavigateToSearch = {},
         onNavigateToNewIncident = {},
         onNavigateToSupport = {},
+        onNavigateToCategories = {},
+        onNavigateToSettings = {},
         onNavigateToIncidentDetail = {}
     )
 }

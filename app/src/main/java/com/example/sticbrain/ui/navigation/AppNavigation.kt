@@ -59,8 +59,88 @@ fun AppNavigation() {
                 onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) },
                 onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
                 onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
+                onNavigateToCategories = { navController.navigate(AppScreens.Categorias.route) },
+                onNavigateToSettings = { navController.navigate(AppScreens.Ajustes.route) },
                 onNavigateToIncidentDetail = { id ->
                     navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id))
+                }
+            )
+        }
+
+        composable(AppScreens.Ajustes.route) {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                },
+                onNavigateToCategories = {
+                    navController.navigate(AppScreens.Categorias.route)
+                },
+                onNavigateToProviders = {
+                    navController.navigate(AppScreens.Proveedores.route)
+                },
+                onClearDemoData = {
+                    // Acción temporal
+                }
+            )
+        }
+
+        composable(AppScreens.Categorias.route) {
+            val categorias by categoriaViewModel.categorias.collectAsState()
+            val queryCategoria by categoriaViewModel.queryBusqueda.collectAsState()
+
+            CategoryManagementScreen(
+                categorias = categorias,
+                queryBusqueda = queryCategoria,
+                onQueryChange = { query ->
+                    categoriaViewModel.buscarCategorias(query)
+                },
+                onCreateCategory = { categoria ->
+                    categoriaViewModel.insertarCategoria(categoria)
+                },
+                onUpdateCategory = { categoria ->
+                    categoriaViewModel.actualizarCategoria(categoria)
+                },
+                onDeleteCategory = { categoria ->
+                    categoriaViewModel.eliminarCategoria(categoria)
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }

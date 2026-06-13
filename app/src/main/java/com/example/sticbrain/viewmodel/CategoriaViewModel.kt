@@ -4,14 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.repository.CategoriaRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CategoriaViewModel(private val repository: CategoriaRepository) : ViewModel() {
 
-    private val _query = MutableStateFlow("")
+    private val _queryBusqueda = MutableStateFlow("")
+    val queryBusqueda: StateFlow<String> = _queryBusqueda.asStateFlow()
 
-    val categorias: StateFlow<List<CategoriaEntity>> = repository.obtenerCategorias()
+    val categorias: StateFlow<List<CategoriaEntity>> = _queryBusqueda
+        .flatMapLatest { q ->
+            if (q.isBlank()) {
+                repository.obtenerCategorias()
+            } else {
+                repository.buscarCategorias(q)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -30,7 +40,7 @@ class CategoriaViewModel(private val repository: CategoriaRepository) : ViewMode
     }
 
     fun buscarCategorias(query: String) {
-        _query.value = query
+        _queryBusqueda.value = query
     }
 
     fun insertarCategoria(categoria: CategoriaEntity) {

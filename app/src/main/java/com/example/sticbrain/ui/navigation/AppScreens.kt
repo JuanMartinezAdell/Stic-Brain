@@ -15,4 +15,6 @@ sealed class AppScreens(val route: String) {
     object ProveedorEditar : AppScreens("proveedor_editar/{proveedorId}") {
         fun createRoute(proveedorId: Long) = "proveedor_editar/$proveedorId"
     }
+    object Categorias : AppScreens("categorias")
+    object Ajustes : AppScreens("ajustes")
 }
