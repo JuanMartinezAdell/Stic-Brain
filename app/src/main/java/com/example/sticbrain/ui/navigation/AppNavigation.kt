@@ -1,6 +1,7 @@
 package com.example.sticbrain.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -17,6 +18,7 @@ import com.example.sticbrain.data.local.database.SticBrainDatabase
 import com.example.sticbrain.data.repository.CategoriaRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import com.example.sticbrain.data.repository.ProveedorRepository
+import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.screens.*
 import com.example.sticbrain.viewmodel.*
 
@@ -59,9 +61,11 @@ fun AppNavigation() {
 
     // CARGA DE DATOS INICIALES
     // Si la base de datos está vacía, se insertan los ejemplos de la plantilla.
-    proveedorViewModel.cargarDatosPrueba()
-    incidenciaViewModel.cargarDatosPrueba()
-    categoriaViewModel.cargarCategoriasInicialesSiNecesario()
+    LaunchedEffect(Unit) {
+        proveedorViewModel.cargarDatosPrueba()
+        incidenciaViewModel.cargarDatosPrueba()
+        categoriaViewModel.cargarCategoriasInicialesSiNecesario()
+    }
 
     // DEFINICIÓN DEL NAVHOST (Gestor de rutas)
     NavHost(

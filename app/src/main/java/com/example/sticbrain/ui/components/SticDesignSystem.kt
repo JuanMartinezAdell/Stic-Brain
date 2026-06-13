@@ -1,4 +1,4 @@
-package com.example.sticbrain.ui.theme
+package com.example.sticbrain.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -19,7 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.R
 
-// Paleta de colores Stic Brain
+/**
+ * Paleta de colores Stic Brain.
+ * Define la identidad visual azul y blanca orientada al entorno sanitario.
+ */
 val SticBlue = Color(0xFF0D47A1)
 val SticBlueLight = Color(0xFF1976D2)
 val SticSky = Color(0xFFE3F2FD)
@@ -33,6 +36,9 @@ val SticGreen = Color(0xFF2E7D32)
 val SticOrange = Color(0xFFF57C00)
 val SticRed = Color(0xFFD32F2F)
 
+/**
+ * Cabecera superior común para todas las pantallas.
+ */
 @Composable
 fun SticTopHeader(
     title: String,
@@ -85,6 +91,9 @@ fun SticTopHeader(
     }
 }
 
+/**
+ * Tarjeta base para contenedores de información.
+ */
 @Composable
 fun SticCard(
     modifier: Modifier = Modifier,
@@ -107,6 +116,9 @@ fun SticCard(
     }
 }
 
+/**
+ * Chip para filtros y etiquetas.
+ */
 @Composable
 fun SticChip(
     text: String,
@@ -131,6 +143,9 @@ fun SticChip(
     }
 }
 
+/**
+ * Etiqueta de prioridad con colores semánticos.
+ */
 @Composable
 fun PriorityBadge(priority: String) {
     val (color, backgroundColor) = when (priority.uppercase()) {
@@ -156,6 +171,9 @@ fun PriorityBadge(priority: String) {
     }
 }
 
+/**
+ * Título de sección con icono opcional.
+ */
 @Composable
 fun SectionTitle(
     text: String,
@@ -184,6 +202,9 @@ fun SectionTitle(
     }
 }
 
+/**
+ * Campo de texto estilizado para formularios.
+ */
 @Composable
 fun SticTextField(
     value: String,
@@ -230,6 +251,9 @@ fun SticTextField(
     }
 }
 
+/**
+ * Barra de navegación inferior común.
+ */
 @Composable
 fun SticBottomBar(
     selectedItem: Int = 0,
@@ -246,7 +270,7 @@ fun SticBottomBar(
         NavigationBarItem(
             selected = selectedItem == 0,
             onClick = onHomeClick,
-            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
+            icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.inicio)) },
             label = { Text(stringResource(R.string.inicio)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = SticBlue,
@@ -259,7 +283,7 @@ fun SticBottomBar(
         NavigationBarItem(
             selected = selectedItem == 1,
             onClick = onSearchClick,
-            icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+            icon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.buscar)) },
             label = { Text(stringResource(R.string.buscar)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = SticBlue,
@@ -272,8 +296,8 @@ fun SticBottomBar(
         NavigationBarItem(
             selected = selectedItem == 2,
             onClick = onNewIncidentClick,
-            icon = { Icon(Icons.Default.AddCircleOutline, contentDescription = "Nueva") },
-            label = { Text("Nueva") },
+            icon = { Icon(Icons.Default.AddCircleOutline, contentDescription = stringResource(R.string.nueva)) },
+            label = { Text(stringResource(R.string.nueva)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = SticBlue,
                 selectedTextColor = SticBlue,
@@ -285,8 +309,8 @@ fun SticBottomBar(
         NavigationBarItem(
             selected = selectedItem == 3,
             onClick = onSupportClick,
-            icon = { Icon(Icons.Default.SupportAgent, contentDescription = "Soporte") },
-            label = { Text("Soporte") },
+            icon = { Icon(Icons.Default.SupportAgent, contentDescription = stringResource(R.string.soporte)) },
+            label = { Text(stringResource(R.string.soporte)) },
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = SticBlue,
                 selectedTextColor = SticBlue,

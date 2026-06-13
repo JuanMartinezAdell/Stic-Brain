@@ -23,4 +23,6 @@
     <string name="buscar">Buscar</string>
     <string name="nueva">Nueva</string>
     <string name="soporte">Soporte</string>
+    <string name="ajustes">Ajustes</string>
+    <string name="categorias">Categorías</string>
 </resources>

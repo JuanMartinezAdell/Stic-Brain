@@ -14,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.ProveedorEntity
+import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.theme.*
 
 /**
