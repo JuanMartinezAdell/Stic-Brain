@@ -3,7 +3,6 @@ package com.example.sticbrain.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,15 +11,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sticbrain.R
-import com.example.sticbrain.ui.components.BottomNavigationBar
-import com.example.sticbrain.ui.components.IncidentCard
-import com.example.sticbrain.ui.theme.SticBrainTheme
+import com.example.sticbrain.ui.theme.*
 
 @Composable
 fun SearchIncidentScreen(
@@ -31,202 +26,97 @@ fun SearchIncidentScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
-    // Datos temporales para maquetación
-    val allIncidents = remember {
+    // Datos temporales adaptados al Excel
+    val allEntries = remember {
         listOf(
-            IncidentTemp(
-                id = 1L,
-                severity = "CRÍTICA",
-                severityColor = Color(0xFFF85149),
-                title = "Usuarios no pueden acceder a Soaris tras actualización",
-                tag = "HIS",
-                tagColor = Color(0xFFA371F7),
-                subtitle = "Soaris HIS",
-                status = "Resuelta",
-                date = "2024-11-15"
-            ),
-            IncidentTemp(
-                id = 2L,
-                severity = "ALTA",
-                severityColor = Color(0xFFDB6D28),
-                title = "PACS sin acceso a imágenes desde Urgencias",
-                tag = "PACS",
-                tagColor = Color(0xFF388BFD),
-                subtitle = "Sectra PACS",
-                status = "Resuelta",
-                date = "2024-11-08"
-            ),
-            IncidentTemp(
-                id = 3L,
-                severity = "MEDIA",
-                severityColor = Color(0xFFD29922),
-                title = "VPN Pulse Secure desconecta a los 5 minutos",
-                tag = "VPN",
-                tagColor = Color(0xFF3FB950),
-                subtitle = "FortiGate SSL-VPN",
-                status = "Resuelta",
-                date = "2024-10-22"
-            ),
-            IncidentTemp(
-                id = 4L,
-                severity = "ALTA",
-                severityColor = Color(0xFFDB6D28),
-                title = "Impresoras de planta no imprimen etiquetas de paciente",
-                tag = "Impresoras",
-                tagColor = Color(0xFFDB6D28),
-                subtitle = "Zebra ZD421 / Admisión HIS",
-                status = "Resuelta",
-                date = "2024-10-15"
-            ),
-            IncidentTemp(
-                id = 5L,
-                severity = "MEDIA",
-                severityColor = Color(0xFFD29922),
-                title = "Outlook no sincroniza correo tras migración de buzón",
-                tag = "Correo",
-                tagColor = Color(0xFFD29922),
-                subtitle = "Microsoft Exchange / Outlook 365",
-                status = "Resuelta",
-                date = "2024-10-05"
-            )
+            KnowledgeEntryTemp(1L, "Acceso y autenticación", "Acceso a Mosaiq", "Usuario solicita el acceso a la aplicación Mosaiq", "Acceso a Mosaiq", "Incluir el grupo SE00_GA_MosaiqRegUsuarios", listOf("mosaiq", "radiofísica"), "Normal"),
+            KnowledgeEntryTemp(2L, "Acceso y autenticación", "Acceso carpetas compartidas NAS", "Usuario solicita acceso a carpeta compartida de la NAS", "Solicito acceso a carpeta compartida", "El acceso es gestionado por Sevilla NAS", listOf("NAS", "carpeta compartida"), "Normal"),
+            KnowledgeEntryTemp(3L, "Acceso y autenticación", "Acceso a Omnicel", "Usuario solicita acceso a Omnicel", "Solicito acceso a Omnicel", "Las credenciales son proporcionadas por el Supervisor", listOf("omnicel", "armario", "farmacia"), "Normal"),
+            KnowledgeEntryTemp(4L, "Software", "Error firma digital", "Error al intentar firmar documentos", "No puedo firmar", "Verificar versión de Autofirma", listOf("firma", "certificado"), "Alta"),
+            KnowledgeEntryTemp(5L, "Impresión y escaneo", "Impresora no imprime", "Impresora de planta no responde", "No imprime", "Reiniciar cola de impresión", listOf("impresora", "zebra"), "Media")
         )
     }
 
-    // Búsqueda local temporal
-    val filteredIncidents = remember(searchQuery) {
-        if (searchQuery.isBlank()) {
-            allIncidents
-        } else {
-            allIncidents.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                it.tag.contains(searchQuery, ignoreCase = true) ||
-                it.subtitle.contains(searchQuery, ignoreCase = true) ||
-                it.severity.contains(searchQuery, ignoreCase = true)
-            }
+    val filteredEntries = remember(searchQuery) {
+        if (searchQuery.isBlank()) allEntries
+        else allEntries.filter {
+            it.title.contains(searchQuery, ignoreCase = true) ||
+            it.category.contains(searchQuery, ignoreCase = true) ||
+            it.procedure.contains(searchQuery, ignoreCase = true) ||
+            it.keywords.any { k -> k.contains(searchQuery, ignoreCase = true) }
         }
     }
 
     Scaffold(
-        containerColor = Color(0xFF0D1117),
+        containerColor = SticBackground,
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = 1, // Buscar is index 1
+            SticBottomBar(
+                selectedItem = 1,
                 onHomeClick = onNavigateToHome,
                 onNewIncidentClick = onNavigateToNewIncident,
                 onSupportClick = onNavigateToSupport
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-        ) {
-            // Barra de búsqueda
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextField(
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            SticTopHeader(title = "Buscador", subtitle = "Base de conocimiento TIC")
+            
+            Column(modifier = Modifier.padding(16.dp)) {
+                OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    placeholder = {
-                        Text(
-                            text = "Buscar título, error, causa, solución...",
-                            color = Color(0xFF8B949E),
-                            fontSize = 14.sp
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color(0xFF8B949E)
-                        )
-                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Buscar por título, frase de usuario, procedimiento...", color = SticTextSecondary, fontSize = 14.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = SticBlue) },
+                    trailingIcon = { if (searchQuery.isNotEmpty()) IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, null) } },
                     shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF161B22),
-                        unfocusedContainerColor = Color(0xFF161B22),
-                        disabledContainerColor = Color(0xFF161B22),
-                        cursorColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    singleLine = true
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = SticWhite,
+                        unfocusedContainerColor = SticWhite,
+                        focusedBorderColor = SticBlue,
+                        unfocusedBorderColor = SticBorder
+                    )
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    color = Color(0xFF161B22),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    IconButton(onClick = { /* Filtro */ }) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = null,
-                            tint = Color(0xFF8B949E)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "${filteredEntries.size} Entradas en la base de conocimiento",
+                    color = SticTextSecondary,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    items(filteredEntries) { entry ->
+                        IncidentEntryCard(
+                            category = entry.category,
+                            title = entry.title,
+                            priority = entry.priority,
+                            keywords = entry.keywords,
+                            procedure = entry.procedure,
+                            onClick = { onNavigateToIncidentDetail(entry.id) }
                         )
                     }
-                }
-            }
-
-            // Contador de resultados
-            Text(
-                text = "${filteredIncidents.size} incidencias en la base de conocimientos",
-                color = Color(0xFF8B949E),
-                fontSize = 12.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-            // Lista de incidencias
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(filteredIncidents) { incident ->
-                    IncidentCard(
-                        severity = incident.severity,
-                        severityColor = incident.severityColor,
-                        title = incident.title,
-                        tag = incident.tag,
-                        tagColor = incident.tagColor,
-                        subtitle = incident.subtitle,
-                        status = incident.status,
-                        date = incident.date,
-                        onClick = { onNavigateToIncidentDetail(incident.id) }
-                    )
                 }
             }
         }
     }
 }
 
-// Modelo temporal
-data class IncidentTemp(
+data class KnowledgeEntryTemp(
     val id: Long,
-    val severity: String,
-    val severityColor: Color,
+    val category: String,
     val title: String,
-    val tag: String,
-    val tagColor: Color,
-    val subtitle: String,
-    val status: String,
-    val date: String
+    val description: String,
+    val userPhrases: String,
+    val procedure: String,
+    val keywords: List<String>,
+    val priority: String
 )
 
 @Preview(showBackground = true)
 @Composable
 fun SearchIncidentScreenPreview() {
-    SticBrainTheme(darkTheme = true) {
-        SearchIncidentScreen()
-    }
+    SearchIncidentScreen()
 }
