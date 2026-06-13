@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">Stic Brain</string>
+    <string name="kbase_tic">Stic Brain</string>
+    <string name="base_conocimientos">Base de conocimientos · Hospital</string>
+    <string name="online">ONLINE</string>
+    <string name="incidencias">Incidencias</string>
+    <string name="resueltas">Resueltas</string>
+    <string name="criticas">Críticas</string>
+    <string name="proveedores">Proveedores</string>
+    <string name="todas">Todas</string>
+    <string name="red">Red</string>
+    <string name="his">HIS</string>
+    <string name="pacs">PACS</string>
+    <string name="impresoras">Impresoras</string>
+    <string name="correo">Correo</string>
+    <string name="mas_recientes">más recientes</string>
+    <string name="critica">CRÍTICA</string>
+    <string name="alta">ALTA</string>
+    <string name="media">MEDIA</string>
+    <string name="resuelta">Resuelta</string>
+    <string name="vpn">VPN</string>
+    <string name="inicio">Inicio</string>
+    <string name="buscar">Buscar</string>
+    <string name="nueva">Nueva</string>
+    <string name="soporte">Soporte</string>
 </resources>

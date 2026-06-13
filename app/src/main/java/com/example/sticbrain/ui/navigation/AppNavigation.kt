@@ -8,6 +8,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
+import com.example.sticbrain.ui.screens.HomeScreen
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -17,7 +19,14 @@ fun AppNavigation() {
         startDestination = AppScreens.Home.route
     ) {
         composable(AppScreens.Home.route) {
-            Text(text = "Pantalla de Inicio (Home)")
+            HomeScreen(
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
+                onNavigateToIncidentDetail = { id ->
+                    navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id))
+                }
+            )
         }
         composable(AppScreens.Incidencias.route) {
             Text(text = "Listado de Incidencias")
