@@ -8,12 +8,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel encargado de gestionar el catálogo de categorías.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategoriaViewModel(private val repository: CategoriaRepository) : ViewModel() {
 
     private val _queryBusqueda = MutableStateFlow("")
+    /** Texto actual para filtrar categorías en la pantalla de gestión. */
     val queryBusqueda: StateFlow<String> = _queryBusqueda.asStateFlow()
 
+    /** 
+     * Lista completa de categorías, filtrada opcionalmente por nombre.
+     */
     val categorias: StateFlow<List<CategoriaEntity>> = _queryBusqueda
         .flatMapLatest { q ->
             if (q.isBlank()) {
@@ -28,6 +35,9 @@ class CategoriaViewModel(private val repository: CategoriaRepository) : ViewMode
             initialValue = emptyList()
         )
 
+    /** 
+     * Lista de categorías marcadas como activas para su uso en formularios.
+     */
     val categoriasActivas: StateFlow<List<CategoriaEntity>> = repository.obtenerCategoriasActivas()
         .stateIn(
             scope = viewModelScope,
@@ -35,32 +45,40 @@ class CategoriaViewModel(private val repository: CategoriaRepository) : ViewMode
             initialValue = emptyList()
         )
 
+    /** Recupera una categoría por ID. */
     fun obtenerCategoriaPorId(id: Long): Flow<CategoriaEntity?> {
         return repository.obtenerCategoriaPorId(id)
     }
 
+    /** Actualiza el filtro de búsqueda de categorías. */
     fun buscarCategorias(query: String) {
         _queryBusqueda.value = query
     }
 
+    /** Crea una nueva categoría. */
     fun insertarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
             repository.insertarCategoria(categoria)
         }
     }
 
+    /** Modifica los datos de una categoría. */
     fun actualizarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
             repository.actualizarCategoria(categoria)
         }
     }
 
+    /** Elimina una categoría. */
     fun eliminarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
             repository.eliminarCategoria(categoria)
         }
     }
 
+    /**
+     * Carga las categorías base de la plantilla Excel si la base de datos está vacía.
+     */
     fun cargarCategoriasInicialesSiNecesario() {
         viewModelScope.launch {
             if (repository.contarCategorias() == 0) {

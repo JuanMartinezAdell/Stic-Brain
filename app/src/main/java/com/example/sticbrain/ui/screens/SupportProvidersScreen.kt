@@ -18,6 +18,12 @@ import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.ProveedorEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla que muestra el directorio de proveedores de soporte y servicios técnicos.
+ * 
+ * Permite filtrar por área técnica y acceder a los datos de contacto y SLA
+ * de cada servicio externo o interno.
+ */
 @Composable
 fun SupportProvidersScreen(
     proveedores: List<ProveedorEntity>,
@@ -29,6 +35,7 @@ fun SupportProvidersScreen(
     var selectedFilter by remember { mutableStateOf("Todos") }
     val filters = listOf("Todos", "Red", "HIS", "PACS", "Impresoras", "Correo")
 
+    // Filtrado local según el chip seleccionado
     val filteredProviders = remember(selectedFilter, proveedores) {
         if (selectedFilter == "Todos") proveedores
         else proveedores.filter { it.categoriasRelacionadas?.contains(selectedFilter, ignoreCase = true) == true }
@@ -38,7 +45,7 @@ fun SupportProvidersScreen(
         containerColor = SticBackground,
         bottomBar = {
             SticBottomBar(
-                selectedItem = 3,
+                selectedItem = 3, // Soporte seleccionado
                 onHomeClick = onNavigateToHome,
                 onSearchClick = onNavigateToSearch,
                 onNewIncidentClick = onNavigateToNewIncident
@@ -46,10 +53,15 @@ fun SupportProvidersScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            // Cabecera principal del módulo
             SticTopHeader(title = "Soporte y escalado", subtitle = "Directorio de proveedores TIC")
             
             Column(modifier = Modifier.padding(16.dp)) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Selector de filtros rápidos
+                LazyRow(
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     items(filters) { filter ->
                         SticChip(
                             text = filter,
@@ -59,20 +71,23 @@ fun SupportProvidersScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
+                // Listado de proveedores
                 if (filteredProviders.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "No se encontraron proveedores", color = SticTextSecondary)
+                        Text(text = "No se encontraron proveedores registrados", color = SticTextSecondary)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         items(filteredProviders) { provider ->
                             SticCard(onClick = { onNavigateToProviderDetail(provider.id) }) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // Icono representativo
                                     Surface(color = SticSky, shape = RoundedCornerShape(8.dp), modifier = Modifier.size(40.dp)) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.Business, null, tint = SticBlue, modifier = Modifier.size(24.dp))
+                                            Icon(Icons.Default.Business, contentDescription = null, tint = SticBlue, modifier = Modifier.size(24.dp))
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(12.dp))
@@ -80,11 +95,12 @@ fun SupportProvidersScreen(
                                         Text(text = provider.nombre, color = SticTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                         Text(text = provider.servicioAsociado, color = SticTextSecondary, fontSize = 13.sp)
                                     }
-                                    Icon(Icons.Default.ChevronRight, null, tint = SticBorder)
+                                    Icon(Icons.Default.ChevronRight, contentDescription = "Ver detalle", tint = SticBorder)
                                 }
                                 
                                 Spacer(modifier = Modifier.height(12.dp))
                                 
+                                // Información de contacto y SLA rápida
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Phone, null, tint = SticBlue, modifier = Modifier.size(14.dp))

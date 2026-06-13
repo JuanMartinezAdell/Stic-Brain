@@ -19,6 +19,12 @@ import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla de detalle de una ficha de conocimiento.
+ * 
+ * Muestra toda la información documentada sobre un procedimiento o incidencia,
+ * incluyendo descripción, causa, resolución y datos de escalado.
+ */
 @Composable
 fun IncidentDetailScreen(
     incidenciaId: Long,
@@ -34,6 +40,7 @@ fun IncidentDetailScreen(
         containerColor = SticBackground,
         bottomBar = {
             SticBottomBar(
+                selectedItem = -1, // Pantalla de detalle (no marcada en barra)
                 onHomeClick = onNavigateToHome,
                 onSearchClick = onNavigateToSearch,
                 onNewIncidentClick = onNavigateToNewIncident,
@@ -42,19 +49,21 @@ fun IncidentDetailScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            // Cabecera con título de ficha e ID
             SticTopHeader(
                 title = "Ficha de conocimiento",
-                subtitle = "#$incidenciaId" + (incidencia?.let { " · ${it.categoria}" } ?: ""),
+                subtitle = if (incidencia != null) "#$incidenciaId · ${incidencia.categoria}" else "#$incidenciaId",
                 showBackButton = true,
                 onBackClick = onNavigateBack,
                 actions = {
                     IconButton(onClick = onDeleteIncident) {
-                        Icon(Icons.Default.Delete, null, tint = SticWhite)
+                        Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = SticWhite)
                     }
                 }
             )
             
             if (incidencia == null) {
+                // Estado de carga mientras Room recupera los datos
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(color = SticBlue)
@@ -63,12 +72,14 @@ fun IncidentDetailScreen(
                     }
                 }
             } else {
+                // Contenido principal con scroll vertical
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    // Título y Prioridad
                     SticCard {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -94,7 +105,7 @@ fun IncidentDetailScreen(
                         }
                     }
                     
-                    SectionTitle(text = "PROCEDIMIENTO / RESPUESTA", icon = Icons.Default.List)
+                    SectionTitle(text = "PROCEDIMIENTO / RESPUESTA", icon = Icons.Default.CheckCircle)
                     SticCard {
                         Row(verticalAlignment = Alignment.Top) {
                             Text(
@@ -104,7 +115,7 @@ fun IncidentDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.weight(1f)
                             )
-                            IconButton(onClick = { /* Copiar */ }) {
+                            IconButton(onClick = { /* Lógica de copiar al portapapeles */ }) {
                                 Icon(Icons.Default.ContentCopy, null, tint = SticBlue, modifier = Modifier.size(20.dp))
                             }
                         }
@@ -126,7 +137,8 @@ fun IncidentDetailScreen(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.height(24.dp))
+                    // Pie de página para dar aire al diseño
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }

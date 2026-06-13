@@ -18,6 +18,12 @@ import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.ProveedorEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla que muestra los detalles completos de un proveedor de soporte.
+ * 
+ * Centraliza la información de contacto, horarios y condiciones de servicio
+ * para facilitar el escalado de incidencias.
+ */
 @Composable
 fun ProviderDetailScreen(
     proveedorId: Long,
@@ -43,34 +49,39 @@ fun ProviderDetailScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            // Cabecera con botón de retroceso y edición
             SticTopHeader(
                 title = "Ficha de soporte",
-                subtitle = "#P$proveedorId · Soporte externo",
+                subtitle = if (proveedor != null) "#P$proveedorId · ${proveedor.nombre}" else "#P$proveedorId",
                 showBackButton = true,
                 onBackClick = onNavigateBack,
                 actions = {
                     IconButton(onClick = { onNavigateToEditProvider(proveedorId) }) {
-                        Icon(Icons.Default.Edit, null, tint = SticWhite)
+                        Icon(Icons.Default.Edit, contentDescription = "Editar", tint = SticWhite)
                     }
                 }
             )
             
             if (proveedor == null) {
+                // Estado de espera mientras se cargan los datos
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = SticBlue)
                 }
             } else {
+                // Información detallada organizada por bloques
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(16.dp)
                 ) {
+                    // Datos principales
                     SticCard {
                         Text(text = proveedor.nombre, color = SticTextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         Text(text = proveedor.servicioAsociado, color = SticBlue, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                     
+                    // Bloque de contacto
                     SectionTitle(text = "CONTACTO", icon = Icons.Default.ContactPhone)
                     SticCard {
                         ContactRow(icon = Icons.Default.Phone, text = proveedor.telefono ?: "-")
@@ -78,32 +89,37 @@ fun ProviderDetailScreen(
                         ContactRow(icon = Icons.Default.Language, text = proveedor.web ?: "-")
                     }
                     
+                    // Horario de atención
                     SectionTitle(text = "HORARIO", icon = Icons.Default.Schedule)
                     SticCard {
-                        Text(text = proveedor.horario ?: "-", color = SticTextPrimary, fontSize = 14.sp)
+                        Text(text = proveedor.horario ?: "No especificado", color = SticTextPrimary, fontSize = 14.sp)
                     }
                     
+                    // Acuerdo de nivel de servicio (SLA)
                     SectionTitle(text = "SLA", icon = Icons.Default.Timer)
                     SticCard {
-                        Text(text = proveedor.sla ?: "-", color = SticGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(text = proveedor.sla ?: "No especificado", color = SticGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
 
+                    // Áreas o categorías en las que este proveedor interviene
                     if (!proveedor.categoriasRelacionadas.isNullOrBlank()) {
                         SectionTitle(text = "CATEGORÍAS RELACIONADAS", icon = Icons.Default.LocalOffer)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             proveedor.categoriasRelacionadas.split(",").forEach { cat ->
-                                SticChip(text = cat.trim())
+                                if (cat.isNotBlank()) SticChip(text = cat.trim())
                             }
                         }
                     }
                     
-                    SectionTitle(text = "NOTAS / COMENTARIOS", icon = Icons.Default.Notes)
+                    // Comentarios de gestión
+                    SectionTitle(text = "NOTAS / COMENTARIOS", icon = Icons.Default.Comment)
                     SticCard {
                         Text(text = proveedor.notasComentarios ?: "-", color = SticTextSecondary, fontSize = 13.sp)
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
+                    // Botón para añadir otro proveedor si este no es el adecuado
                     Button(
                         onClick = onNavigateToNewProvider,
                         modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -120,6 +136,7 @@ fun ProviderDetailScreen(
     }
 }
 
+/** Fila auxiliar para mostrar un dato de contacto con icono. */
 @Composable
 fun ContactRow(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {

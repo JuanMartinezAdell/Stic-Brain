@@ -20,6 +20,12 @@ import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla de búsqueda de la base de conocimiento.
+ * 
+ * Permite realizar búsquedas por texto libre y filtrar por categorías técnicas
+ * para localizar rápidamente una ficha de respuesta.
+ */
 @Composable
 fun SearchIncidentScreen(
     incidencias: List<IncidenciaEntity>,
@@ -44,9 +50,11 @@ fun SearchIncidentScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            // Cabecera sencilla
             SticTopHeader(title = "Buscador", subtitle = "Base de conocimiento TIC")
             
             Column(modifier = Modifier.padding(16.dp)) {
+                // Campo de texto para búsqueda libre
                 OutlinedTextField(
                     value = queryBusqueda,
                     onValueChange = onQueryChange,
@@ -65,11 +73,15 @@ fun SearchIncidentScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Filtro rápido por categorías en horizontal
+                LazyRow(
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     item {
                         SticChip(
                             text = "Todas",
-                            isSelected = true,
+                            isSelected = queryBusqueda.isBlank(), // Simplificado: si no hay búsqueda, marcar Todas
                             onClick = { onCategoriaSelected("Todas") }
                         )
                     }
@@ -81,8 +93,6 @@ fun SearchIncidentScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
                 Text(
                     text = "${incidencias.size} Entradas en la base de conocimiento",
                     color = SticTextSecondary,
@@ -90,12 +100,16 @@ fun SearchIncidentScreen(
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
+                // Listado de resultados
                 if (incidencias.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(text = "No se encontraron resultados", color = SticTextSecondary)
                     }
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         items(incidencias) { entry ->
                             IncidentEntryCard(
                                 category = entry.categoria,

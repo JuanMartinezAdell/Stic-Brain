@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
 import com.example.sticbrain.data.importer.ExcelImporterImpl
+import com.example.sticbrain.data.exporter.ExcelExporterImpl
 import com.example.sticbrain.data.local.database.SticBrainDatabase
 import com.example.sticbrain.data.repository.CategoriaRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
@@ -19,15 +20,28 @@ import com.example.sticbrain.data.repository.ProveedorRepository
 import com.example.sticbrain.ui.screens.*
 import com.example.sticbrain.viewmodel.*
 
+/**
+ * Componente principal de navegación de la aplicación.
+ * 
+ * Aquí se definen todas las pantallas, sus rutas y la lógica de paso
+ * de información entre ellas. También se inicializan los ViewModels
+ * y se conectan con los repositorios y la base de datos Room.
+ */
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
     
-    // Inicialización manual simple de Room y ViewModels
+    // INICIALIZACIÓN DE LA CAPA DE DATOS (ROOM)
+    // Se obtiene la instancia única de la base de datos.
     val database = SticBrainDatabase.getDatabase(context)
-    val excelImporter = ExcelImporterImpl()
     
+    // SERVICIOS AUXILIARES
+    val excelImporter = ExcelImporterImpl()
+    val excelExporter = ExcelExporterImpl()
+    
+    // REPOSITORIOS Y VIEWMODELS
+    // El repositorio actúa como fuente de verdad para el ViewModel.
     val proveedorRepository = ProveedorRepository(database.proveedorDao())
     val proveedorViewModel: ProveedorViewModel = viewModel(
         factory = ProveedorViewModelFactory(proveedorRepository)
@@ -43,15 +57,19 @@ fun AppNavigation() {
         factory = CategoriaViewModelFactory(categoriaRepository)
     )
 
-    // Carga inicial de datos de prueba
+    // CARGA DE DATOS INICIALES
+    // Si la base de datos está vacía, se insertan los ejemplos de la plantilla.
     proveedorViewModel.cargarDatosPrueba()
     incidenciaViewModel.cargarDatosPrueba()
     categoriaViewModel.cargarCategoriasInicialesSiNecesario()
 
+    // DEFINICIÓN DEL NAVHOST (Gestor de rutas)
     NavHost(
         navController = navController,
         startDestination = AppScreens.Home.route
     ) {
+        
+        // PANTALLA DE INICIO
         composable(AppScreens.Home.route) {
             val incidencias by incidenciaViewModel.incidencias.collectAsState()
             val categorias by categoriaViewModel.categoriasActivas.collectAsState()
@@ -69,10 +87,13 @@ fun AppNavigation() {
             )
         }
 
+        // PANTALLA DE AJUSTES Y UTILIDADES
         composable(AppScreens.Ajustes.route) {
             val importUiState by incidenciaViewModel.importUiState.collectAsState()
+            val exportUiState by incidenciaViewModel.exportUiState.collectAsState()
             SettingsScreen(
                 importUiState = importUiState,
+                exportUiState = exportUiState,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
@@ -96,21 +117,17 @@ fun AppNavigation() {
                     navController.navigate(AppScreens.Proveedores.route)
                 },
                 onImportExcelFile = { uri ->
-                    incidenciaViewModel.importarExcelDesdeUri(
-                        context = context,
-                        uri = uri,
-                        excelImporter = excelImporter
-                    )
+                    incidenciaViewModel.importarExcelDesdeUri(context, uri, excelImporter)
                 },
-                onResetImportState = {
-                    incidenciaViewModel.resetImportState()
+                onExportExcelFile = { uri ->
+                    incidenciaViewModel.exportarExcelAUri(context, uri, excelExporter)
                 },
-                onClearDemoData = {
-                    // Acción temporal
-                }
+                onResetImportState = { incidenciaViewModel.resetImportState() },
+                onResetExportState = { incidenciaViewModel.resetExportState() }
             )
         }
 
+        // PANTALLA DE GESTIÓN DE CATEGORÍAS
         composable(AppScreens.Categorias.route) {
             val categorias by categoriaViewModel.categorias.collectAsState()
             val queryCategoria by categoriaViewModel.queryBusqueda.collectAsState()
@@ -118,47 +135,24 @@ fun AppNavigation() {
             CategoryManagementScreen(
                 categorias = categorias,
                 queryBusqueda = queryCategoria,
-                onQueryChange = { query ->
-                    categoriaViewModel.buscarCategorias(query)
-                },
-                onCreateCategory = { categoria ->
-                    categoriaViewModel.insertarCategoria(categoria)
-                },
-                onUpdateCategory = { categoria ->
-                    categoriaViewModel.actualizarCategoria(categoria)
-                },
-                onDeleteCategory = { categoria ->
-                    categoriaViewModel.eliminarCategoria(categoria)
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
+                onQueryChange = { query -> categoriaViewModel.buscarCategorias(query) },
+                onCreateCategory = { cat -> categoriaViewModel.insertarCategoria(cat) },
+                onUpdateCategory = { cat -> categoriaViewModel.actualizarCategoria(cat) },
+                onDeleteCategory = { cat -> categoriaViewModel.eliminarCategoria(cat) },
+                onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
-                        popUpTo(AppScreens.Home.route) {
-                            inclusive = false
-                        }
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route) {
-                        launchSingleTop = true
-                    }
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) {
-                        launchSingleTop = true
-                    }
-                }
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true } },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } }
             )
         }
 
+        // PANTALLA DE BÚSQUEDA AVANZADA
         composable(AppScreens.Busqueda.route) {
             val incidencias by incidenciaViewModel.incidencias.collectAsState()
             val categorias by categoriaViewModel.categoriasActivas.collectAsState()
@@ -175,18 +169,15 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route)
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } },
                 onNavigateToIncidentDetail = { id ->
                     navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id))
                 }
             )
         }
 
+        // PANTALLA DE NUEVA ENTRADA (FICHA)
         composable(AppScreens.IncidenciaCrear.route) {
             val categorias by categoriaViewModel.categoriasActivas.collectAsState()
             NewIncidentScreen(
@@ -197,12 +188,8 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                },
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } },
                 onNavigateBack = { navController.popBackStack() },
                 onSaveIncident = { incidencia ->
                     incidenciaViewModel.insertarIncidencia(incidencia)
@@ -214,6 +201,7 @@ fun AppNavigation() {
             )
         }
 
+        // PANTALLA DE DETALLE DE FICHA
         composable(
             route = AppScreens.IncidenciaDetalle.route,
             arguments = listOf(navArgument("incidenciaId") { type = NavType.LongType })
@@ -237,18 +225,13 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route)
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                }
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } }
             )
         }
 
+        // PANTALLA DE DIRECTORIO DE SOPORTE
         composable(AppScreens.Proveedores.route) {
             val proveedores by proveedorViewModel.proveedores.collectAsState()
             SupportProvidersScreen(
@@ -259,18 +242,15 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route)
-                },
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
                 onNavigateToProviderDetail = { id ->
                     navController.navigate(AppScreens.ProveedorDetalle.createRoute(id))
                 }
             )
         }
 
+        // PANTALLA DE ALTA DE PROVEEDOR
         composable(AppScreens.ProveedorCrear.route) {
             ProviderFormScreen(
                 isEditMode = false,
@@ -285,18 +265,13 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                }
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true } },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } }
             )
         }
 
+        // PANTALLA DE DETALLE DE PROVEEDOR
         composable(
             route = AppScreens.ProveedorDetalle.route,
             arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
@@ -307,33 +282,22 @@ fun AppNavigation() {
             ProviderDetailScreen(
                 proveedorId = id,
                 proveedor = proveedor,
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToEditProvider = { proveedorId ->
-                    navController.navigate(AppScreens.ProveedorEditar.createRoute(proveedorId))
-                },
-                onNavigateToNewProvider = {
-                    navController.navigate(AppScreens.ProveedorCrear.route)
-                },
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditProvider = { idProv -> navController.navigate(AppScreens.ProveedorEditar.createRoute(idProv)) },
+                onNavigateToNewProvider = { navController.navigate(AppScreens.ProveedorCrear.route) },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                }
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true } },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } }
             )
         }
 
+        // PANTALLA DE EDICIÓN DE PROVEEDOR
         composable(
             route = AppScreens.ProveedorEditar.route,
             arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
@@ -356,15 +320,9 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = {
-                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
-                },
-                onNavigateToNewIncident = {
-                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
-                },
-                onNavigateToSupport = {
-                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
-                }
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true } },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } }
             )
         }
     }

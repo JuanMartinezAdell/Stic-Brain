@@ -20,6 +20,12 @@ import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla principal de la aplicación Stic Brain.
+ * 
+ * Presenta un resumen de la base de conocimiento hospitalaria,
+ * estadísticas rápidas y las últimas fichas registradas.
+ */
 @Composable
 fun HomeScreen(
     incidencias: List<IncidenciaEntity>,
@@ -38,7 +44,7 @@ fun HomeScreen(
         bottomBar = {
             SticBottomBar(
                 selectedItem = 0,
-                onHomeClick = {}, // Ya estamos en Home
+                onHomeClick = {}, // Ya estamos en Inicio
                 onSearchClick = onNavigateToSearch,
                 onNewIncidentClick = onNavigateToNewIncident,
                 onSupportClick = onNavigateToSupport
@@ -50,6 +56,7 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+            // Cabecera superior con acceso a Ajustes
             SticTopHeader(
                 title = "Stic Brain",
                 subtitle = "Base de conocimiento TIC · Hospital",
@@ -60,27 +67,37 @@ fun HomeScreen(
                 }
             )
             
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize()
+            ) {
+                // Bloque de resumen numérico
                 StatsSection(incidencias)
                 
+                // Botón de acceso directo a categorías
                 Button(
                     onClick = onNavigateToCategories,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SticSky),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.Default.Settings, contentDescription = null, tint = SticBlue)
+                    Icon(Icons.Default.Category, contentDescription = null, tint = SticBlue)
                     Spacer(Modifier.width(8.dp))
                     Text(text = "Gestionar categorías", color = SticBlue, fontWeight = FontWeight.Bold)
                 }
 
+                // Carrusel de filtros por área técnica
                 FilterSection(categorias)
+                
+                // Listado de las 5 fichas más recientes
                 IncidentsListSection(incidencias, onIncidentClick = onNavigateToIncidentDetail)
             }
         }
     }
 }
 
+/** Sección que muestra contadores rápidos de la base de datos. */
 @Composable
 fun StatsSection(incidencias: List<IncidenciaEntity>, modifier: Modifier = Modifier) {
     val prioritariasCount = incidencias.count { it.nivelPrioridad.uppercase() == "CRÍTICA" || it.nivelPrioridad.uppercase() == "ALTA" }
@@ -96,22 +113,24 @@ fun StatsSection(incidencias: List<IncidenciaEntity>, modifier: Modifier = Modif
     }
 }
 
+/** Tarjeta individual para mostrar un dato estadístico. */
 @Composable
 fun StatCard(count: String, label: String, color: Color, modifier: Modifier = Modifier) {
     SticCard(modifier = modifier) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text(text = count, color = color, fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(text = count, color = color, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text(text = label, color = SticTextSecondary, fontSize = 11.sp)
         }
     }
 }
 
+/** Filtros rápidos por nombre de categoría. */
 @Composable
 fun FilterSection(categorias: List<CategoriaEntity>, modifier: Modifier = Modifier) {
     var selectedCategory by remember { mutableStateOf("Todas") }
 
     LazyRow(
-        modifier = modifier.padding(vertical = 16.dp),
+        modifier = modifier.padding(bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
@@ -131,6 +150,7 @@ fun FilterSection(categorias: List<CategoriaEntity>, modifier: Modifier = Modifi
     }
 }
 
+/** Lista vertical con las últimas entradas documentadas. */
 @Composable
 fun IncidentsListSection(
     incidencias: List<IncidenciaEntity>,
@@ -143,8 +163,8 @@ fun IncidentsListSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Entradas recientes", color = SticTextPrimary, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-            Text(text = "Ver todas", color = SticBlue, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(text = "Entradas recientes", color = SticTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(text = "Ver todas", color = SticBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
         
         Spacer(modifier = Modifier.height(12.dp))
@@ -156,7 +176,7 @@ fun IncidentsListSection(
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth().heightIn(max = 1000.dp) // Limitar altura para evitar problemas con scroll anidado si procede
+                modifier = Modifier.fillMaxWidth().weight(1f)
             ) {
                 items(incidencias.take(5)) { incidencia ->
                     IncidentEntryCard(
@@ -173,6 +193,7 @@ fun IncidentsListSection(
     }
 }
 
+/** Tarjeta compacta para mostrar el resumen de una ficha de conocimiento. */
 @Composable
 fun IncidentEntryCard(
     category: String,
@@ -184,13 +205,13 @@ fun IncidentEntryCard(
 ) {
     SticCard(onClick = onClick) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(text = category, color = SticBlue, fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+            Text(text = category, color = SticBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             PriorityBadge(priority = priority)
         }
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        Text(text = title, color = SticTextPrimary, fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Text(text = title, color = SticTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         
         Spacer(modifier = Modifier.height(4.dp))
         

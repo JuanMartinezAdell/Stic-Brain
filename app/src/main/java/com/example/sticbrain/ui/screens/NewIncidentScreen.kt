@@ -19,6 +19,12 @@ import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Formulario para registrar una nueva entrada en la base de conocimiento.
+ * 
+ * Permite introducir todos los campos requeridos por el estándar del proyecto
+ * con validaciones para asegurar la calidad de la información.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NewIncidentScreen(
@@ -29,6 +35,7 @@ fun NewIncidentScreen(
     onNavigateBack: () -> Unit = {},
     onSaveIncident: (IncidenciaEntity) -> Unit = {}
 ) {
+    // Estados internos del formulario
     var category by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -38,7 +45,7 @@ fun NewIncidentScreen(
     var priority by remember { mutableStateOf("Normal") }
     var notes by remember { mutableStateOf("") }
 
-    // Estados de error
+    // Estados para controlar errores de validación
     var categoryError by remember { mutableStateOf(false) }
     var titleError by remember { mutableStateOf(false) }
     var descriptionError by remember { mutableStateOf(false) }
@@ -48,7 +55,7 @@ fun NewIncidentScreen(
         containerColor = SticBackground,
         bottomBar = {
             SticBottomBar(
-                selectedItem = 2,
+                selectedItem = 2, // Nueva entrada seleccionada
                 onHomeClick = onNavigateToHome,
                 onSearchClick = onNavigateToSearch,
                 onSupportClick = onNavigateToSupport
@@ -56,7 +63,13 @@ fun NewIncidentScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            SticTopHeader(title = "Nueva entrada", subtitle = "Base de conocimiento TIC", showBackButton = true, onBackClick = onNavigateBack)
+            // Cabecera con botón de retroceso
+            SticTopHeader(
+                title = "Nueva entrada", 
+                subtitle = "Base de conocimiento TIC", 
+                showBackButton = true, 
+                onBackClick = onNavigateBack
+            )
             
             Column(
                 modifier = Modifier
@@ -64,6 +77,7 @@ fun NewIncidentScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
+                // Selector de Categoría mediante chips dinámicos
                 Text(text = "CATEGORÍA *", color = if (categoryError) SticRed else SticTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 if (categorias.isEmpty()) {
                     Text(text = "No hay categorías disponibles", color = SticTextSecondary, fontSize = 14.sp)
@@ -86,11 +100,12 @@ fun NewIncidentScreen(
                     }
                 }
                 if (categoryError) {
-                    Text(text = "Debe seleccionar una categoría", color = SticRed, fontSize = 11.sp)
+                    Text(text = "Debe seleccionar una categoría técnica", color = SticRed, fontSize = 11.sp)
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                // Campos de texto obligatorios y opcionales
                 SticTextField(
                     value = title, 
                     onValueChange = { 
@@ -100,7 +115,7 @@ fun NewIncidentScreen(
                     label = "TÍTULO / NOMBRE *", 
                     placeholder = "Ej: Acceso a Mosaiq",
                     isError = titleError,
-                    errorMessage = "El título es obligatorio"
+                    errorMessage = "El título es obligatorio para identificar la ficha"
                 )
 
                 SticTextField(
@@ -110,12 +125,12 @@ fun NewIncidentScreen(
                         descriptionError = it.isBlank()
                     }, 
                     label = "DESCRIPCIÓN *", 
-                    placeholder = "Breve explicación...",
+                    placeholder = "Breve explicación del problema...",
                     isError = descriptionError,
                     errorMessage = "La descripción es obligatoria"
                 )
 
-                SticTextField(value = userPhrases, onValueChange = { userPhrases = it }, label = "FRASES DE USUARIO", placeholder = "Lo que dice el usuario...")
+                SticTextField(value = userPhrases, onValueChange = { userPhrases = it }, label = "FRASES DE USUARIO", placeholder = "Lo que suele decir el usuario...")
 
                 SticTextField(
                     value = procedure, 
@@ -124,15 +139,16 @@ fun NewIncidentScreen(
                         procedureError = it.isBlank()
                     }, 
                     label = "PROCEDIMIENTO / RESPUESTA *", 
-                    placeholder = "Pasos a seguir...", 
+                    placeholder = "Pasos técnicos para resolver la situación...", 
                     singleLine = false, 
                     modifier = Modifier.height(120.dp),
                     isError = procedureError,
-                    errorMessage = "El procedimiento es obligatorio"
+                    errorMessage = "Debe incluir al menos un paso de resolución"
                 )
 
-                SticTextField(value = keywords, onValueChange = { keywords = it }, label = "PALABRAS CLAVE", placeholder = "Separadas por comas...")
+                SticTextField(value = keywords, onValueChange = { keywords = it }, label = "PALABRAS CLAVE", placeholder = "Separadas por comas (ej: vpn, login, error)...")
                 
+                // Selector de Prioridad
                 Text(text = "NIVEL DE PRIORIDAD *", color = SticTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Baja", "Normal", "Alta", "Crítica").forEach { prio ->
@@ -144,12 +160,14 @@ fun NewIncidentScreen(
                     }
                 }
                 
-                SticTextField(value = notes, onValueChange = { notes = it }, label = "NOTAS / COMENTARIOS", placeholder = "Información adicional...", singleLine = false, modifier = Modifier.height(100.dp))
+                SticTextField(value = notes, onValueChange = { notes = it }, label = "NOTAS / COMENTARIOS", placeholder = "Cualquier observación adicional...", singleLine = false, modifier = Modifier.height(100.dp))
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
+                // Botón principal de guardado
                 Button(
                     onClick = {
+                        // Validación final antes de enviar al ViewModel
                         categoryError = category.isBlank()
                         titleError = title.isBlank()
                         descriptionError = description.isBlank()

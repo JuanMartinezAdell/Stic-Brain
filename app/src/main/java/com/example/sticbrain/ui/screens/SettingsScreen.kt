@@ -20,13 +20,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.ui.theme.*
+import com.example.sticbrain.viewmodel.ExportUiState
 import com.example.sticbrain.viewmodel.ImportUiState
 
+/**
+ * Pantalla de Ajustes y Utilidades.
+ * 
+ * Centraliza las funciones administrativas de la aplicación, como la gestión
+ * de categorías, importación/exportación de datos y herramientas de desarrollo.
+ */
 @Composable
 fun SettingsScreen(
     importUiState: ImportUiState,
+    exportUiState: ExportUiState,
     onImportExcelFile: (Uri) -> Unit = {},
+    onExportExcelFile: (Uri) -> Unit = {},
     onResetImportState: () -> Unit = {},
+    onResetExportState: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
@@ -34,17 +44,21 @@ fun SettingsScreen(
     onNavigateToSupport: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
-    onExportData: () -> Unit = {},
     onBackupDatabase: () -> Unit = {},
     onRestoreDatabase: () -> Unit = {},
     onChatbotSettings: () -> Unit = {},
     onClearDemoData: () -> Unit = {}
 ) {
-    val launcher = rememberLauncherForActivityResult(
+    // Selector para abrir archivo Excel
+    val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
-        onResult = { uri ->
-            uri?.let { onImportExcelFile(it) }
-        }
+        onResult = { uri -> uri?.let { onImportExcelFile(it) } }
+    )
+
+    // Selector para guardar archivo Excel
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        onResult = { uri -> uri?.let { onExportExcelFile(it) } }
     )
 
     Scaffold(
@@ -75,11 +89,17 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // MOSTRAR ESTADO DE IMPORTACIÓN
+            // Paneles informativos de progreso (Importación / Exportación)
             if (importUiState.isImporting) {
-                ImportingCard()
+                StatusCard(text = "Importando archivo Excel...", isLoading = true)
             } else if (importUiState.result != null || importUiState.errorMessage != null) {
                 ImportResultCard(importUiState, onResetImportState)
+            }
+
+            if (exportUiState.isExporting) {
+                StatusCard(text = "Exportando fichas a Excel...", isLoading = true)
+            } else if (exportUiState.result != null || exportUiState.errorMessage != null) {
+                ExportResultCard(exportUiState, onResetExportState)
             }
 
             Text(
@@ -89,7 +109,7 @@ fun SettingsScreen(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // SECCIÓN: BASE DE CONOCIMIENTO
+            // GRUPO: GESTIÓN DE DATOS
             SettingsSection(title = "Base de conocimiento") {
                 SettingsOptionItem(
                     icon = Icons.Default.Category,
@@ -99,9 +119,9 @@ fun SettingsScreen(
                 SettingsOptionItem(
                     icon = Icons.Default.UploadFile,
                     title = "Importar fichas desde Excel",
-                    subtitle = "Carga una plantilla .xlsx con las fichas de conocimiento.",
+                    subtitle = "Carga una plantilla .xlsx con datos masivos",
                     onClick = {
-                        launcher.launch(arrayOf(
+                        importLauncher.launch(arrayOf(
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                             "application/vnd.ms-excel"
                         ))
@@ -110,8 +130,10 @@ fun SettingsScreen(
                 SettingsOptionItem(
                     icon = Icons.Default.FileDownload,
                     title = "Exportar base de conocimiento",
-                    subtitle = "Próximamente",
-                    onClick = onExportData
+                    subtitle = "Genera un backup en formato Excel",
+                    onClick = {
+                        exportLauncher.launch("stic_brain_export.xlsx")
+                    }
                 )
                 SettingsOptionItem(
                     icon = Icons.Default.Backup,
@@ -119,40 +141,28 @@ fun SettingsScreen(
                     subtitle = "Próximamente",
                     onClick = onBackupDatabase
                 )
-                SettingsOptionItem(
-                    icon = Icons.Default.Restore,
-                    title = "Restaurar copia",
-                    subtitle = "Próximamente",
-                    onClick = onRestoreDatabase
-                )
             }
 
-            // SECCIÓN: SOPORTE Y ESCALADO
+            // GRUPO: SOPORTE
             SettingsSection(title = "Soporte y escalado") {
                 SettingsOptionItem(
                     icon = Icons.Default.Business,
-                    title = "Gestionar soporte y proveedores",
+                    title = "Gestionar directorio de soporte",
                     onClick = onNavigateToProviders
-                )
-                SettingsOptionItem(
-                    icon = Icons.Default.SupportAgent,
-                    title = "Ver servicios de soporte",
-                    onClick = onNavigateToSupport
                 )
             }
 
-            // SECCIÓN: CHATBOT
-            SettingsSection(title = "Chatbot técnico") {
+            // GRUPO: INTELIGENCIA ARTIFICIAL (DISEÑO FUTURO)
+            SettingsSection(title = "Chatbot técnico (Próximamente)") {
                 SettingsOptionItem(
                     icon = Icons.Default.SmartToy,
-                    title = "Configurar chatbot",
-                    subtitle = "Próximamente",
+                    title = "Configurar asistente IA",
                     onClick = onChatbotSettings
                 )
             }
 
-            // SECCIÓN: DATOS DE PRUEBA
-            SettingsSection(title = "Datos de prueba") {
+            // GRUPO: HERRAMIENTAS TÉCNICAS
+            SettingsSection(title = "Herramientas") {
                 SettingsOptionItem(
                     icon = Icons.Default.DeleteSweep,
                     title = "Limpiar datos de prueba",
@@ -161,27 +171,32 @@ fun SettingsScreen(
                 )
             }
 
+            // Información técnica de la versión
             AppInfoSection()
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
+/** Tarjeta para mostrar estados de espera con spinner. */
 @Composable
-private fun ImportingCard() {
+private fun StatusCard(text: String, isLoading: Boolean) {
     SticCard {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = SticBlue, strokeWidth = 2.dp)
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(text = "Importando archivo Excel...", color = SticBlue, fontWeight = FontWeight.Bold)
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = SticBlue, strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            Text(text = text, color = SticBlue, fontWeight = FontWeight.Bold)
         }
     }
 }
 
+/** Muestra el resumen numérico de lo importado y los posibles errores. */
 @Composable
 private fun ImportResultCard(state: ImportUiState, onDismiss: () -> Unit) {
     SticCard {
@@ -206,27 +221,47 @@ private fun ImportResultCard(state: ImportUiState, onDismiss: () -> Unit) {
             if (state.errorMessage != null) {
                 Text(text = state.errorMessage, color = SticTextPrimary, fontSize = 14.sp)
             } else if (state.result != null) {
-                Text(text = "Total filas procesadas: ${state.result.totalFilas}", fontSize = 13.sp)
-                Text(text = "Filas válidas importadas: ${state.result.filasValidas}", color = SticGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(text = "Filas con errores: ${state.result.filasInvalidas}", color = SticRed, fontSize = 13.sp)
-                
-                if (state.result.errores.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Detalle de errores:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
-                        state.result.errores.take(3).forEach { error ->
-                            Text(text = "• $error", fontSize = 11.sp, color = SticTextSecondary)
-                        }
-                        if (state.result.errores.size > 3) {
-                            Text(text = "... y ${state.result.errores.size - 3} errores más", fontSize = 11.sp, color = SticTextSecondary)
-                        }
-                    }
-                }
+                Text(text = "Total procesadas: ${state.result.totalFilas}", fontSize = 13.sp)
+                Text(text = "Válidas: ${state.result.filasValidas}", color = SticGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Errores: ${state.result.filasInvalidas}", color = SticRed, fontSize = 13.sp)
             }
         }
     }
 }
 
+/** Muestra si la exportación a Excel ha tenido éxito. */
+@Composable
+private fun ExportResultCard(state: ExportUiState, onDismiss: () -> Unit) {
+    SticCard {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (state.errorMessage != null) "Error al exportar" else "Exportación finalizada",
+                    color = if (state.errorMessage != null) SticRed else SticGreen,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Close, null, tint = SticTextSecondary)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (state.errorMessage != null) {
+                Text(text = state.errorMessage, color = SticTextPrimary, fontSize = 14.sp)
+            } else if (state.result != null) {
+                Text(text = "Fichas exportadas: ${state.result.exportadas}", fontSize = 13.sp)
+                Text(text = "Archivo generado correctamente", color = SticGreen, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+/** Estructura visual para cada grupo de ajustes. */
 @Composable
 private fun SettingsSection(
     title: String,
@@ -236,7 +271,7 @@ private fun SettingsSection(
         Text(
             text = title.uppercase(),
             color = SticBlue,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
         )
@@ -246,6 +281,7 @@ private fun SettingsSection(
     }
 }
 
+/** Elemento clicable de la lista de ajustes. */
 @Composable
 private fun SettingsOptionItem(
     icon: ImageVector,
@@ -272,7 +308,7 @@ private fun SettingsOptionItem(
             Text(
                 text = title,
                 color = titleColor,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Medium
             )
             if (subtitle != null) {
@@ -292,14 +328,23 @@ private fun SettingsOptionItem(
     }
 }
 
+/** Bloque con datos técnicos de la aplicación. */
 @Composable
 private fun AppInfoSection() {
-    SettingsSection(title = "Información") {
+    SettingsSection(title = "Información del sistema") {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
-            AppInfoRow(label = "Nombre", value = "Stic Brain")
-            AppInfoRow(label = "Tipo", value = "Base de conocimiento TIC")
-            AppInfoRow(label = "Versión", value = "1.0")
-            AppInfoRow(label = "Tecnologías", value = "Kotlin, Compose, Room")
+            AppInfoRow(label = "Versión", value = "1.0.0 Stable")
+            AppInfoRow(label = "Arquitectura", value = "MVVM + Compose")
+            AppInfoRow(label = "Base de datos", value = "SQLite / Room")
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = "Stic Brain es una base de conocimiento optimizada para el entorno sanitario TIC.",
+                color = SticTextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            )
         }
     }
 }
@@ -320,7 +365,8 @@ private fun AppInfoRow(label: String, value: String) {
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    SticBrainTheme {
-        SettingsScreen(importUiState = ImportUiState())
-    }
+    SettingsScreen(
+        importUiState = ImportUiState(),
+        exportUiState = ExportUiState()
+    )
 }

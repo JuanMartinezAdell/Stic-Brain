@@ -16,6 +16,9 @@ import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.ProveedorEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla de formulario para crear o editar un proveedor de soporte.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProviderFormScreen(
@@ -29,6 +32,7 @@ fun ProviderFormScreen(
     onNavigateToNewIncident: () -> Unit = {},
     onNavigateToSupport: () -> Unit = {}
 ) {
+    // Estados del formulario
     var name by remember { mutableStateOf("") }
     var serviceArea by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
@@ -38,10 +42,11 @@ fun ProviderFormScreen(
     var sla by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
     
+    // Lista de categorías para asociar al proveedor
     val categories = listOf("Red", "HIS", "PACS", "Impresoras", "Correo", "VPN", "Servidores", "AD/GPO", "SAP", "General")
     val selectedCategories = remember { mutableStateListOf<String>() }
 
-    // Rellenar datos si es modo edición y llega el proveedor
+    // Rellenar datos si estamos en modo edición y llega el objeto proveedor
     LaunchedEffect(proveedor) {
         if (isEditMode && proveedor != null) {
             name = proveedor.nombre
@@ -73,6 +78,7 @@ fun ProviderFormScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            // Cabecera con título dinámico según el modo
             SticTopHeader(
                 title = if (isEditMode) "Editar proveedor" else "Nuevo proveedor",
                 subtitle = if (isEditMode) "Proveedor #P$proveedorId" else "Directorio de soporte",
@@ -86,6 +92,7 @@ fun ProviderFormScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
+                // Campos de datos básicos
                 SticTextField(value = name, onValueChange = { name = it }, label = "NOMBRE DEL SOPORTE/PROVEEDOR *", placeholder = "Ej: Siemens Healthineers")
                 SticTextField(value = serviceArea, onValueChange = { serviceArea = it }, label = "SERVICIO ASOCIADO *", placeholder = "Ej: HIS · Soaris")
                 
@@ -103,6 +110,7 @@ fun ProviderFormScreen(
                 SticTextField(value = schedule, onValueChange = { schedule = it }, label = "HORARIO", placeholder = "Ej: L-V 08:00-20:00")
                 SticTextField(value = sla, onValueChange = { sla = it }, label = "SLA", placeholder = "Ej: 4h crítica")
                 
+                // Selección de categorías relacionadas
                 Text(text = "CATEGORÍAS RELACIONADAS", color = SticTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 FlowRow(
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -127,6 +135,7 @@ fun ProviderFormScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
+                // Botones de acción del formulario
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(
                         onClick = onNavigateBack,
@@ -138,6 +147,7 @@ fun ProviderFormScreen(
                     }
                     Button(
                         onClick = {
+                            // Validación mínima
                             if (name.isNotBlank() && serviceArea.isNotBlank()) {
                                 val nuevoProveedor = ProveedorEntity(
                                     id = proveedorId ?: 0L,

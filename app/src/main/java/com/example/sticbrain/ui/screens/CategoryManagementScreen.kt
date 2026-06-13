@@ -18,6 +18,12 @@ import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.ui.theme.*
 
+/**
+ * Pantalla de administración de categorías técnicas.
+ * 
+ * Permite crear, editar, activar/desactivar y eliminar las categorías 
+ * que clasifican las fichas de conocimiento en la base de datos.
+ */
 @Composable
 fun CategoryManagementScreen(
     categorias: List<CategoriaEntity>,
@@ -32,6 +38,7 @@ fun CategoryManagementScreen(
     onNavigateToNewIncident: () -> Unit = {},
     onNavigateToSupport: () -> Unit = {}
 ) {
+    // Control de diálogos modales
     var showFormDialog by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf<CategoriaEntity?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<CategoriaEntity?>(null) }
@@ -48,7 +55,7 @@ fun CategoryManagementScreen(
         },
         bottomBar = {
             SticBottomBar(
-                selectedItem = -1, // Pantalla de administración
+                selectedItem = -1, // Pantalla administrativa secundaria
                 onHomeClick = onNavigateToHome,
                 onSearchClick = onNavigateToSearch,
                 onNewIncidentClick = onNavigateToNewIncident,
@@ -56,6 +63,7 @@ fun CategoryManagementScreen(
             )
         },
         floatingActionButton = {
+            // Botón flotante para añadir categoría rápidamente
             FloatingActionButton(
                 onClick = {
                     selectedCategory = null
@@ -73,6 +81,7 @@ fun CategoryManagementScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+            // Buscador superior
             CategorySearchField(
                 query = queryBusqueda,
                 onQueryChange = onQueryChange,
@@ -80,11 +89,13 @@ fun CategoryManagementScreen(
             )
 
             if (categorias.isEmpty()) {
+                // Mensaje informativo si no hay datos
                 CategoryEmptyState(onAddClick = {
                     selectedCategory = null
                     showFormDialog = true
                 })
             } else {
+                // Listado scrolleable de categorías
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -109,6 +120,7 @@ fun CategoryManagementScreen(
             }
         }
 
+        // Diálogo para Crear / Editar categoría
         if (showFormDialog) {
             CategoryFormDialog(
                 categoria = selectedCategory,
@@ -121,6 +133,7 @@ fun CategoryManagementScreen(
             )
         }
 
+        // Diálogo de confirmación de borrado
         if (showDeleteConfirm != null) {
             DeleteCategoryDialog(
                 categoria = showDeleteConfirm!!,
@@ -134,6 +147,7 @@ fun CategoryManagementScreen(
     }
 }
 
+/** Campo de búsqueda estilizado para categorías. */
 @Composable
 private fun CategorySearchField(
     query: String,
@@ -164,7 +178,7 @@ private fun CategorySearchField(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "$count categorías",
+            text = "$count categorías registradas",
             color = SticTextSecondary,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
@@ -173,6 +187,7 @@ private fun CategorySearchField(
     }
 }
 
+/** Tarjeta individual de categoría con botones de acción rápida. */
 @Composable
 private fun CategoryCard(
     categoria: CategoriaEntity,
@@ -194,6 +209,7 @@ private fun CategoryCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
+                // Indicador visual de estado
                 SticChip(
                     text = if (categoria.activa) "Activa" else "Inactiva",
                     containerColor = if (categoria.activa) SticSky else Color.LightGray.copy(alpha = 0.2f),
@@ -213,6 +229,7 @@ private fun CategoryCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Fila de acciones (Borrar, Desactivar, Editar)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
@@ -246,6 +263,7 @@ private fun CategoryCard(
     }
 }
 
+/** Diálogo modal con el formulario de categoría. */
 @Composable
 private fun CategoryFormDialog(
     categoria: CategoriaEntity?,
@@ -330,6 +348,7 @@ private fun CategoryFormDialog(
     )
 }
 
+/** Diálogo de advertencia antes de borrar. */
 @Composable
 private fun DeleteCategoryDialog(
     categoria: CategoriaEntity,
@@ -369,6 +388,7 @@ private fun DeleteCategoryDialog(
     )
 }
 
+/** Pantalla informativa cuando no hay datos. */
 @Composable
 private fun CategoryEmptyState(onAddClick: () -> Unit) {
     Box(
