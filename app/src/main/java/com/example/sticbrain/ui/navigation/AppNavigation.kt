@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
+import com.example.sticbrain.data.importer.ExcelImporterImpl
 import com.example.sticbrain.data.local.database.SticBrainDatabase
 import com.example.sticbrain.data.repository.CategoriaRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
@@ -25,6 +26,7 @@ fun AppNavigation() {
     
     // Inicialización manual simple de Room y ViewModels
     val database = SticBrainDatabase.getDatabase(context)
+    val excelImporter = ExcelImporterImpl()
     
     val proveedorRepository = ProveedorRepository(database.proveedorDao())
     val proveedorViewModel: ProveedorViewModel = viewModel(
@@ -68,7 +70,9 @@ fun AppNavigation() {
         }
 
         composable(AppScreens.Ajustes.route) {
+            val importUiState by incidenciaViewModel.importUiState.collectAsState()
             SettingsScreen(
+                importUiState = importUiState,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
@@ -91,8 +95,15 @@ fun AppNavigation() {
                 onNavigateToProviders = {
                     navController.navigate(AppScreens.Proveedores.route)
                 },
-                onImportData = {
-                    // TODO Prompt 32: abrir selector de archivo Excel y procesar importación
+                onImportExcelFile = { uri ->
+                    incidenciaViewModel.importarExcelDesdeUri(
+                        context = context,
+                        uri = uri,
+                        excelImporter = excelImporter
+                    )
+                },
+                onResetImportState = {
+                    incidenciaViewModel.resetImportState()
                 },
                 onClearDemoData = {
                     // Acción temporal

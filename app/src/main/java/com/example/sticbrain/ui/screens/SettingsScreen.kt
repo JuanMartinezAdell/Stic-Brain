@@ -1,5 +1,8 @@
 package com.example.sticbrain.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,9 +20,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.ui.theme.*
+import com.example.sticbrain.viewmodel.ImportUiState
 
 @Composable
 fun SettingsScreen(
+    importUiState: ImportUiState,
+    onImportExcelFile: (Uri) -> Unit = {},
+    onResetImportState: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
@@ -28,12 +35,18 @@ fun SettingsScreen(
     onNavigateToCategories: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
     onExportData: () -> Unit = {},
-    onImportData: () -> Unit = {},
     onBackupDatabase: () -> Unit = {},
     onRestoreDatabase: () -> Unit = {},
     onChatbotSettings: () -> Unit = {},
     onClearDemoData: () -> Unit = {}
 ) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            uri?.let { onImportExcelFile(it) }
+        }
+    )
+
     Scaffold(
         containerColor = SticBackground,
         topBar = {
@@ -46,7 +59,7 @@ fun SettingsScreen(
         },
         bottomBar = {
             SticBottomBar(
-                selectedItem = -1, // Pantalla secundaria
+                selectedItem = -1,
                 onHomeClick = onNavigateToHome,
                 onSearchClick = onNavigateToSearch,
                 onNewIncidentClick = onNavigateToNewIncident,
@@ -62,6 +75,13 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // MOSTRAR ESTADO DE IMPORTACIÓN
+            if (importUiState.isImporting) {
+                ImportingCard()
+            } else if (importUiState.result != null || importUiState.errorMessage != null) {
+                ImportResultCard(importUiState, onResetImportState)
+            }
+
             Text(
                 text = "Administra la base de conocimiento, categorías, soporte y futuras funciones de IA.",
                 color = SticTextSecondary,
@@ -80,7 +100,12 @@ fun SettingsScreen(
                     icon = Icons.Default.UploadFile,
                     title = "Importar fichas desde Excel",
                     subtitle = "Carga una plantilla .xlsx con las fichas de conocimiento.",
-                    onClick = onImportData
+                    onClick = {
+                        launcher.launch(arrayOf(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "application/vnd.ms-excel"
+                        ))
+                    }
                 )
                 SettingsOptionItem(
                     icon = Icons.Default.FileDownload,
@@ -124,12 +149,6 @@ fun SettingsScreen(
                     subtitle = "Próximamente",
                     onClick = onChatbotSettings
                 )
-                Text(
-                    text = "El chatbot se diseñará para responder únicamente usando las fichas de conocimiento guardadas en Stic Brain.",
-                    color = SticTextSecondary,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
             }
 
             // SECCIÓN: DATOS DE PRUEBA
@@ -140,19 +159,70 @@ fun SettingsScreen(
                     titleColor = SticRed,
                     onClick = onClearDemoData
                 )
-                Text(
-                    text = "Usar solo durante el desarrollo de la aplicación.",
-                    color = SticOrange,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
             }
 
-            // SECCIÓN: INFORMACIÓN
             AppInfoSection()
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun ImportingCard() {
+    SticCard {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = SticBlue, strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = "Importando archivo Excel...", color = SticBlue, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun ImportResultCard(state: ImportUiState, onDismiss: () -> Unit) {
+    SticCard {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (state.errorMessage != null) "Error en importación" else "Importación finalizada",
+                    color = if (state.errorMessage != null) SticRed else SticGreen,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Close, null, tint = SticTextSecondary)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (state.errorMessage != null) {
+                Text(text = state.errorMessage, color = SticTextPrimary, fontSize = 14.sp)
+            } else if (state.result != null) {
+                Text(text = "Total filas procesadas: ${state.result.totalFilas}", fontSize = 13.sp)
+                Text(text = "Filas válidas importadas: ${state.result.filasValidas}", color = SticGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Filas con errores: ${state.result.filasInvalidas}", color = SticRed, fontSize = 13.sp)
+                
+                if (state.result.errores.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(text = "Detalle de errores:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        state.result.errores.take(3).forEach { error ->
+                            Text(text = "• $error", fontSize = 11.sp, color = SticTextSecondary)
+                        }
+                        if (state.result.errores.size > 3) {
+                            Text(text = "... y ${state.result.errores.size - 3} errores más", fontSize = 11.sp, color = SticTextSecondary)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -230,15 +300,6 @@ private fun AppInfoSection() {
             AppInfoRow(label = "Tipo", value = "Base de conocimiento TIC")
             AppInfoRow(label = "Versión", value = "1.0")
             AppInfoRow(label = "Tecnologías", value = "Kotlin, Compose, Room")
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                text = "Aplicación orientada a documentar procedimientos, respuestas y soluciones TIC en un entorno hospitalario.",
-                color = SticTextSecondary,
-                fontSize = 13.sp,
-                lineHeight = 18.sp
-            )
         }
     }
 }
@@ -260,6 +321,6 @@ private fun AppInfoRow(label: String, value: String) {
 @Composable
 fun SettingsScreenPreview() {
     SticBrainTheme {
-        SettingsScreen()
+        SettingsScreen(importUiState = ImportUiState())
     }
 }

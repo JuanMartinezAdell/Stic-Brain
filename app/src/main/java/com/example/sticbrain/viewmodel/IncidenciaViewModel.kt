@@ -1,14 +1,22 @@
 package com.example.sticbrain.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
-import com.example.sticbrain.data.importer.ExcelKnowledgeRow
-import com.example.sticbrain.data.importer.toIncidenciaEntity
+import com.example.sticbrain.data.importer.*
 import com.example.sticbrain.data.repository.IncidenciaRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+data class ImportUiState(
+    val isImporting: Boolean = false,
+    val result: ExcelImportResult? = null,
+    val errorMessage: String? = null
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewModel() {
@@ -18,6 +26,9 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
 
     private val _categoriaFiltro = MutableStateFlow<String?>(null)
     private val _prioridadFiltro = MutableStateFlow<String?>(null)
+
+    private val _importUiState = MutableStateFlow(ImportUiState())
+    val importUiState: StateFlow<ImportUiState> = _importUiState.asStateFlow()
 
     val incidencias: StateFlow<List<IncidenciaEntity>> = combine(
         _queryBusqueda,
@@ -66,11 +77,35 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
         }
     }
 
-    fun importarIncidenciasDesdeExcel(rows: List<ExcelKnowledgeRow>) {
-        viewModelScope.launch {
-            val entities = rows.map { it.toIncidenciaEntity() }
-            repository.insertarIncidencias(entities)
+    fun importarExcelDesdeUri(
+        context: Context,
+        uri: Uri,
+        excelImporter: ExcelImporter
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _importUiState.value = ImportUiState(isImporting = true)
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    val (rows, result) = inputStream.use { excelImporter.importFromInputStream(it) }
+                    
+                    if (rows.isNotEmpty()) {
+                        val entities = rows.map { it.toIncidenciaEntity() }
+                        repository.insertarIncidencias(entities)
+                    }
+                    
+                    _importUiState.value = ImportUiState(isImporting = false, result = result)
+                } else {
+                    _importUiState.value = ImportUiState(isImporting = false, errorMessage = "No se pudo abrir el archivo")
+                }
+            } catch (e: Exception) {
+                _importUiState.value = ImportUiState(isImporting = false, errorMessage = "Error: ${e.message}")
+            }
         }
+    }
+
+    fun resetImportState() {
+        _importUiState.value = ImportUiState()
     }
 
     fun actualizarIncidencia(incidencia: IncidenciaEntity) {
