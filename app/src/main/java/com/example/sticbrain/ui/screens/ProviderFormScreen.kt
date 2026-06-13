@@ -9,20 +9,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sticbrain.data.local.entity.ProveedorEntity
 import com.example.sticbrain.ui.theme.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProviderFormScreen(
     proveedorId: Long? = null,
+    proveedor: ProveedorEntity? = null,
     isEditMode: Boolean = false,
     onNavigateBack: () -> Unit = {},
-    onSaveProvider: () -> Unit = {},
+    onSaveProvider: (ProveedorEntity) -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToNewIncident: () -> Unit = {},
@@ -40,17 +41,22 @@ fun ProviderFormScreen(
     val categories = listOf("Red", "HIS", "PACS", "Impresoras", "Correo", "VPN", "Servidores", "AD/GPO", "SAP", "General")
     val selectedCategories = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(isEditMode) {
-        if (isEditMode && proveedorId != null) {
-            name = "Siemens Healthineers"
-            serviceArea = "HIS · Soaris"
-            phone = "900 102 345"
-            email = "soporte.his@siemens-healthineers.com"
-            web = "soporte.siemens.com"
-            schedule = "L-V 08:00-20:00"
-            sla = "4h crítica / 8h alta"
-            notes = "Escalar incidencias críticas."
-            selectedCategories.add("HIS")
+    // Rellenar datos si es modo edición y llega el proveedor
+    LaunchedEffect(proveedor) {
+        if (isEditMode && proveedor != null) {
+            name = proveedor.nombre
+            serviceArea = proveedor.servicioAsociado
+            phone = proveedor.telefono ?: ""
+            email = proveedor.email ?: ""
+            web = proveedor.web ?: ""
+            schedule = proveedor.horario ?: ""
+            sla = proveedor.sla ?: ""
+            notes = proveedor.notasComentarios ?: ""
+            
+            selectedCategories.clear()
+            proveedor.categoriasRelacionadas?.split(",")?.forEach {
+                if (it.isNotBlank()) selectedCategories.add(it.trim())
+            }
         }
     }
 
@@ -131,7 +137,23 @@ fun ProviderFormScreen(
                         Text("Cancelar", color = SticBlue, fontWeight = FontWeight.Bold)
                     }
                     Button(
-                        onClick = onSaveProvider,
+                        onClick = {
+                            if (name.isNotBlank() && serviceArea.isNotBlank()) {
+                                val nuevoProveedor = ProveedorEntity(
+                                    id = proveedorId ?: 0L,
+                                    nombre = name,
+                                    servicioAsociado = serviceArea,
+                                    telefono = phone,
+                                    email = email,
+                                    web = web,
+                                    horario = schedule,
+                                    sla = sla,
+                                    categoriasRelacionadas = selectedCategories.joinToString(","),
+                                    notasComentarios = notes
+                                )
+                                onSaveProvider(nuevoProveedor)
+                            }
+                        },
                         modifier = Modifier.weight(1f).height(52.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = SticBlue),
                         shape = RoundedCornerShape(8.dp)

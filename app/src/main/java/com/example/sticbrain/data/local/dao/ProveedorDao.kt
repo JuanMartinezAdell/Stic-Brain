@@ -7,17 +7,26 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ProveedorDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(proveedor: ProveedorEntity)
+    suspend fun insertar(proveedor: ProveedorEntity)
 
     @Update
-    suspend fun update(proveedor: ProveedorEntity)
+    suspend fun actualizar(proveedor: ProveedorEntity)
 
     @Delete
-    suspend fun delete(proveedor: ProveedorEntity)
+    suspend fun eliminar(proveedor: ProveedorEntity)
 
     @Query("SELECT * FROM proveedores WHERE id = :id")
-    suspend fun getById(id: Long): ProveedorEntity?
+    fun obtenerProveedorPorId(id: Long): Flow<ProveedorEntity?>
 
     @Query("SELECT * FROM proveedores ORDER BY nombre ASC")
-    fun getAll(): Flow<List<ProveedorEntity>>
+    fun obtenerProveedores(): Flow<List<ProveedorEntity>>
+
+    @Query("""
+        SELECT * FROM proveedores 
+        WHERE nombre LIKE '%' || :query || '%' 
+        OR servicioAsociado LIKE '%' || :query || '%'
+        OR categoriasRelacionadas LIKE '%' || :query || '%'
+        ORDER BY nombre ASC
+    """)
+    fun buscarProveedores(query: String): Flow<List<ProveedorEntity>>
 }

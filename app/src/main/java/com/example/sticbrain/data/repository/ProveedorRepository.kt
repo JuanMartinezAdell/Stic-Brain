@@ -6,19 +6,21 @@ import kotlinx.coroutines.flow.Flow
 
 class ProveedorRepository(private val proveedorDao: ProveedorDao) {
 
-    fun getAll(): Flow<List<ProveedorEntity>> = proveedorDao.getAll()
+    fun obtenerProveedores(): Flow<List<ProveedorEntity>> = proveedorDao.obtenerProveedores()
 
-    suspend fun getById(id: Long): ProveedorEntity? = proveedorDao.getById(id)
+    fun obtenerProveedorPorId(id: Long): Flow<ProveedorEntity?> = proveedorDao.obtenerProveedorPorId(id)
 
-    suspend fun insert(proveedor: ProveedorEntity) {
-        proveedorDao.insert(proveedor)
+    fun buscarProveedores(query: String): Flow<List<ProveedorEntity>> = proveedorDao.buscarProveedores(query)
+
+    suspend fun insertarProveedor(proveedor: ProveedorEntity) {
+        proveedorDao.insertar(proveedor)
     }
 
-    suspend fun update(proveedor: ProveedorEntity) {
-        proveedorDao.update(proveedor)
+    suspend fun actualizarProveedor(proveedor: ProveedorEntity) {
+        proveedorDao.actualizar(proveedor)
     }
 
-    suspend fun delete(proveedor: ProveedorEntity) {
-        proveedorDao.delete(proveedor)
+    suspend fun eliminarProveedor(proveedor: ProveedorEntity) {
+        proveedorDao.eliminar(proveedor)
     }
 }

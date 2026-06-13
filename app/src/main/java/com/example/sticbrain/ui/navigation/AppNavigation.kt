@@ -1,12 +1,18 @@
 package com.example.sticbrain.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
+import com.example.sticbrain.data.local.database.SticBrainDatabase
+import com.example.sticbrain.data.repository.ProveedorRepository
 import com.example.sticbrain.ui.screens.HomeScreen
 import com.example.sticbrain.ui.screens.IncidentDetailScreen
 import com.example.sticbrain.ui.screens.NewIncidentScreen
@@ -14,10 +20,23 @@ import com.example.sticbrain.ui.screens.ProviderDetailScreen
 import com.example.sticbrain.ui.screens.ProviderFormScreen
 import com.example.sticbrain.ui.screens.SearchIncidentScreen
 import com.example.sticbrain.ui.screens.SupportProvidersScreen
+import com.example.sticbrain.viewmodel.ProveedorViewModel
+import com.example.sticbrain.viewmodel.ProveedorViewModelFactory
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
+    
+    // Inicialización manual simple de Room y ViewModel (sin Hilt por ahora)
+    val database = SticBrainDatabase.getDatabase(context)
+    val proveedorRepository = ProveedorRepository(database.proveedorDao())
+    val proveedorViewModel: ProveedorViewModel = viewModel(
+        factory = ProveedorViewModelFactory(proveedorRepository)
+    )
+
+    // Carga inicial de datos de prueba si es necesario
+    proveedorViewModel.cargarDatosPrueba()
 
     NavHost(
         navController = navController,
@@ -106,7 +125,9 @@ fun AppNavigation() {
         }
 
         composable(AppScreens.Proveedores.route) {
+            val proveedores by proveedorViewModel.proveedores.collectAsState()
             SupportProvidersScreen(
+                proveedores = proveedores,
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
@@ -129,7 +150,10 @@ fun AppNavigation() {
             ProviderFormScreen(
                 isEditMode = false,
                 onNavigateBack = { navController.popBackStack() },
-                onSaveProvider = { navController.popBackStack() },
+                onSaveProvider = { proveedor ->
+                    proveedorViewModel.insertarProveedor(proveedor)
+                    navController.popBackStack()
+                },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
@@ -153,9 +177,14 @@ fun AppNavigation() {
             arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getLong("proveedorId") ?: 0L
+            val proveedor by proveedorViewModel.obtenerProveedorPorId(id).collectAsState(initial = null)
+            
             ProviderDetailScreen(
                 proveedorId = id,
-                onNavigateBack = { navController.popBackStack() },
+                proveedor = proveedor,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onNavigateToEditProvider = { proveedorId ->
                     navController.navigate(AppScreens.ProveedorEditar.createRoute(proveedorId))
                 },
@@ -185,11 +214,17 @@ fun AppNavigation() {
             arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getLong("proveedorId") ?: 0L
+            val proveedor by proveedorViewModel.obtenerProveedorPorId(id).collectAsState(initial = null)
+
             ProviderFormScreen(
                 proveedorId = id,
+                proveedor = proveedor,
                 isEditMode = true,
                 onNavigateBack = { navController.popBackStack() },
-                onSaveProvider = { navController.popBackStack() },
+                onSaveProvider = { proveedorActualizado ->
+                    proveedorViewModel.actualizarProveedor(proveedorActualizado)
+                    navController.popBackStack()
+                },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
