@@ -3,6 +3,8 @@ package com.example.sticbrain.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
+import com.example.sticbrain.data.importer.ExcelKnowledgeRow
+import com.example.sticbrain.data.importer.toIncidenciaEntity
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -61,6 +63,13 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
     fun insertarIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
             repository.insertarIncidencia(incidencia)
+        }
+    }
+
+    fun importarIncidenciasDesdeExcel(rows: List<ExcelKnowledgeRow>) {
+        viewModelScope.launch {
+            val entities = rows.map { it.toIncidenciaEntity() }
+            repository.insertarIncidencias(entities)
         }
     }
 

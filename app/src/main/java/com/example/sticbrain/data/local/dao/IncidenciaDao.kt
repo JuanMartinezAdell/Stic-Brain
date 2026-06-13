@@ -9,6 +9,9 @@ interface IncidenciaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(incidencia: IncidenciaEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertarIncidencias(incidencias: List<IncidenciaEntity>)
+
     @Update
     suspend fun actualizar(incidencia: IncidenciaEntity)
 

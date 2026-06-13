@@ -78,8 +78,8 @@ fun SettingsScreen(
                 )
                 SettingsOptionItem(
                     icon = Icons.Default.UploadFile,
-                    title = "Importar desde Excel",
-                    subtitle = "Próximamente",
+                    title = "Importar fichas desde Excel",
+                    subtitle = "Carga una plantilla .xlsx con las fichas de conocimiento.",
                     onClick = onImportData
                 )
                 SettingsOptionItem(

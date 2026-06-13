@@ -22,6 +22,10 @@ class IncidenciaRepository(private val incidenciaDao: IncidenciaDao) {
         incidenciaDao.insertar(incidencia)
     }
 
+    suspend fun insertarIncidencias(incidencias: List<IncidenciaEntity>) {
+        incidenciaDao.insertarIncidencias(incidencias)
+    }
+
     suspend fun actualizarIncidencia(incidencia: IncidenciaEntity) {
         incidenciaDao.actualizar(incidencia)
     }

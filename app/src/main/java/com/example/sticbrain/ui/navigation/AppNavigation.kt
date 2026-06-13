@@ -91,6 +91,9 @@ fun AppNavigation() {
                 onNavigateToProviders = {
                     navController.navigate(AppScreens.Proveedores.route)
                 },
+                onImportData = {
+                    // TODO Prompt 32: abrir selector de archivo Excel y procesar importación
+                },
                 onClearDemoData = {
                     // Acción temporal
                 }
