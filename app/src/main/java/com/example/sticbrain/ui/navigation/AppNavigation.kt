@@ -1,6 +1,5 @@
 package com.example.sticbrain.ui.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -9,6 +8,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
 import com.example.sticbrain.ui.screens.HomeScreen
+import com.example.sticbrain.ui.screens.IncidentDetailScreen
+import com.example.sticbrain.ui.screens.NewIncidentScreen
+import com.example.sticbrain.ui.screens.ProviderDetailScreen
+import com.example.sticbrain.ui.screens.ProviderFormScreen
+import com.example.sticbrain.ui.screens.SearchIncidentScreen
+import com.example.sticbrain.ui.screens.SupportProvidersScreen
 
 @Composable
 fun AppNavigation() {
@@ -28,50 +33,179 @@ fun AppNavigation() {
                 }
             )
         }
-        composable(AppScreens.Incidencias.route) {
-            Text(text = "Listado de Incidencias")
+
+        composable(AppScreens.Busqueda.route) {
+            SearchIncidentScreen(
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route)
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                },
+                onNavigateToIncidentDetail = { id ->
+                    navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id))
+                }
+            )
         }
+
+        composable(AppScreens.IncidenciaCrear.route) {
+            NewIncidentScreen(
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                },
+                onNavigateBack = { navController.popBackStack() },
+                onSaveIncident = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
         composable(
             route = AppScreens.IncidenciaDetalle.route,
             arguments = listOf(navArgument("incidenciaId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getLong("incidenciaId")
-            Text(text = "Detalle de Incidencia ID: $id")
+            val id = backStackEntry.arguments?.getLong("incidenciaId") ?: 0L
+            IncidentDetailScreen(
+                incidenciaId = id,
+                onNavigateBack = { navController.popBackStack() },
+                onDeleteIncident = { /* Implementación futura */ },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route)
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                }
+            )
         }
-        composable(AppScreens.IncidenciaCrear.route) {
-            Text(text = "Crear Nueva Incidencia")
-        }
-        composable(
-            route = AppScreens.IncidenciaEditar.route,
-            arguments = listOf(navArgument("incidenciaId") { type = NavType.LongType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getLong("incidenciaId")
-            Text(text = "Editar Incidencia ID: $id")
-        }
-        composable(AppScreens.Busqueda.route) {
-            Text(text = "Búsqueda de Incidencias")
-        }
-        composable(AppScreens.Categorias.route) {
-            Text(text = "Gestión de Categorías")
-        }
-        composable(AppScreens.Aplicaciones.route) {
-            Text(text = "Gestión de Aplicaciones")
-        }
-        composable(AppScreens.Entornos.route) {
-            Text(text = "Gestión de Entornos")
-        }
+
         composable(AppScreens.Proveedores.route) {
-            Text(text = "Listado de Proveedores")
+            SupportProvidersScreen(
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route)
+                },
+                onNavigateToProviderDetail = { id ->
+                    navController.navigate(AppScreens.ProveedorDetalle.createRoute(id))
+                }
+            )
         }
+
         composable(AppScreens.ProveedorCrear.route) {
-            Text(text = "Crear Nuevo Proveedor")
+            ProviderFormScreen(
+                isEditMode = false,
+                onNavigateBack = { navController.popBackStack() },
+                onSaveProvider = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                }
+            )
         }
+
+        composable(
+            route = AppScreens.ProveedorDetalle.route,
+            arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getLong("proveedorId") ?: 0L
+            ProviderDetailScreen(
+                proveedorId = id,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditProvider = { proveedorId ->
+                    navController.navigate(AppScreens.ProveedorEditar.createRoute(proveedorId))
+                },
+                onNavigateToNewProvider = {
+                    navController.navigate(AppScreens.ProveedorCrear.route)
+                },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                }
+            )
+        }
+
         composable(
             route = AppScreens.ProveedorEditar.route,
             arguments = listOf(navArgument("proveedorId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getLong("proveedorId")
-            Text(text = "Editar Proveedor ID: $id")
+            val id = backStackEntry.arguments?.getLong("proveedorId") ?: 0L
+            ProviderFormScreen(
+                proveedorId = id,
+                isEditMode = true,
+                onNavigateBack = { navController.popBackStack() },
+                onSaveProvider = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.navigate(AppScreens.Home.route) {
+                        popUpTo(AppScreens.Home.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSearch = {
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true }
+                },
+                onNavigateToNewIncident = {
+                    navController.navigate(AppScreens.IncidenciaCrear.route) { launchSingleTop = true }
+                },
+                onNavigateToSupport = {
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
+                }
+            )
         }
     }
 }
