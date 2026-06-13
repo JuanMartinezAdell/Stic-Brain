@@ -6,27 +6,27 @@ import kotlinx.coroutines.flow.Flow
 
 class IncidenciaRepository(private val incidenciaDao: IncidenciaDao) {
 
-    fun getAll(): Flow<List<IncidenciaEntity>> = incidenciaDao.getAll()
+    fun obtenerIncidencias(): Flow<List<IncidenciaEntity>> = incidenciaDao.obtenerIncidencias()
 
-    suspend fun getById(id: Long): IncidenciaEntity? = incidenciaDao.getById(id)
+    fun obtenerIncidenciaPorId(id: Long): Flow<IncidenciaEntity?> = incidenciaDao.obtenerIncidenciaPorId(id)
 
-    suspend fun insert(incidencia: IncidenciaEntity) {
-        incidenciaDao.insert(incidencia)
+    fun buscarIncidencias(query: String): Flow<List<IncidenciaEntity>> = incidenciaDao.buscarIncidencias(query)
+
+    fun filtrarPorCategoria(categoria: String): Flow<List<IncidenciaEntity>> =
+        incidenciaDao.filtrarPorCategoria(categoria)
+
+    fun filtrarPorPrioridad(prioridad: String): Flow<List<IncidenciaEntity>> =
+        incidenciaDao.filtrarPorPrioridad(prioridad)
+
+    suspend fun insertarIncidencia(incidencia: IncidenciaEntity) {
+        incidenciaDao.insertar(incidencia)
     }
 
-    suspend fun update(incidencia: IncidenciaEntity) {
-        incidenciaDao.update(incidencia)
+    suspend fun actualizarIncidencia(incidencia: IncidenciaEntity) {
+        incidenciaDao.actualizar(incidencia)
     }
 
-    suspend fun delete(incidencia: IncidenciaEntity) {
-        incidenciaDao.delete(incidencia)
+    suspend fun eliminarIncidencia(incidencia: IncidenciaEntity) {
+        incidenciaDao.eliminar(incidencia)
     }
-
-    fun search(query: String): Flow<List<IncidenciaEntity>> = incidenciaDao.search(query)
-
-    fun getByCategoria(categoriaId: Long): Flow<List<IncidenciaEntity>> =
-        incidenciaDao.getByCategoria(categoriaId)
-
-    fun getByAplicacion(aplicacionId: Long): Flow<List<IncidenciaEntity>> =
-        incidenciaDao.getByAplicacion(aplicacionId)
 }

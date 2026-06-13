@@ -12,38 +12,41 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
 import com.example.sticbrain.data.local.database.SticBrainDatabase
+import com.example.sticbrain.data.repository.IncidenciaRepository
 import com.example.sticbrain.data.repository.ProveedorRepository
-import com.example.sticbrain.ui.screens.HomeScreen
-import com.example.sticbrain.ui.screens.IncidentDetailScreen
-import com.example.sticbrain.ui.screens.NewIncidentScreen
-import com.example.sticbrain.ui.screens.ProviderDetailScreen
-import com.example.sticbrain.ui.screens.ProviderFormScreen
-import com.example.sticbrain.ui.screens.SearchIncidentScreen
-import com.example.sticbrain.ui.screens.SupportProvidersScreen
-import com.example.sticbrain.viewmodel.ProveedorViewModel
-import com.example.sticbrain.viewmodel.ProveedorViewModelFactory
+import com.example.sticbrain.ui.screens.*
+import com.example.sticbrain.viewmodel.*
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
     
-    // Inicialización manual simple de Room y ViewModel (sin Hilt por ahora)
+    // Inicialización manual simple de Room y ViewModels
     val database = SticBrainDatabase.getDatabase(context)
+    
     val proveedorRepository = ProveedorRepository(database.proveedorDao())
     val proveedorViewModel: ProveedorViewModel = viewModel(
         factory = ProveedorViewModelFactory(proveedorRepository)
     )
 
-    // Carga inicial de datos de prueba si es necesario
+    val incidenciaRepository = IncidenciaRepository(database.incidenciaDao())
+    val incidenciaViewModel: IncidenciaViewModel = viewModel(
+        factory = IncidenciaViewModelFactory(incidenciaRepository)
+    )
+
+    // Carga inicial de datos de prueba
     proveedorViewModel.cargarDatosPrueba()
+    incidenciaViewModel.cargarDatosPrueba()
 
     NavHost(
         navController = navController,
         startDestination = AppScreens.Home.route
     ) {
         composable(AppScreens.Home.route) {
+            val incidencias by incidenciaViewModel.incidencias.collectAsState()
             HomeScreen(
+                incidencias = incidencias,
                 onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) },
                 onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
                 onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
@@ -54,7 +57,12 @@ fun AppNavigation() {
         }
 
         composable(AppScreens.Busqueda.route) {
+            val incidencias by incidenciaViewModel.incidencias.collectAsState()
+            val query by incidenciaViewModel.queryBusqueda.collectAsState()
             SearchIncidentScreen(
+                incidencias = incidencias,
+                queryBusqueda = query,
+                onQueryChange = { incidenciaViewModel.buscarIncidencias(it) },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
@@ -88,7 +96,8 @@ fun AppNavigation() {
                     navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true }
                 },
                 onNavigateBack = { navController.popBackStack() },
-                onSaveIncident = {
+                onSaveIncident = { incidencia ->
+                    incidenciaViewModel.insertarIncidencia(incidencia)
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
                         launchSingleTop = true
@@ -102,10 +111,18 @@ fun AppNavigation() {
             arguments = listOf(navArgument("incidenciaId") { type = NavType.LongType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getLong("incidenciaId") ?: 0L
+            val incidencia by incidenciaViewModel.obtenerIncidenciaPorId(id).collectAsState(initial = null)
+            
             IncidentDetailScreen(
                 incidenciaId = id,
+                incidencia = incidencia,
                 onNavigateBack = { navController.popBackStack() },
-                onDeleteIncident = { /* Implementación futura */ },
+                onDeleteIncident = {
+                    incidencia?.let {
+                        incidenciaViewModel.eliminarIncidencia(it)
+                        navController.popBackStack()
+                    }
+                },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }

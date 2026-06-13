@@ -4,93 +4,116 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.data.repository.IncidenciaRepository
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewModel() {
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    private val _queryBusqueda = MutableStateFlow("")
+    val queryBusqueda: StateFlow<String> = _queryBusqueda.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _categoriaFiltro = MutableStateFlow<String?>(null)
+    private val _prioridadFiltro = MutableStateFlow<String?>(null)
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
-    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-
-    // Flow que combina todas las incidencias o las filtradas por búsqueda
-    val incidencias: StateFlow<List<IncidenciaEntity>> = _searchQuery
-        .debounce(300.milliseconds)
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
-                repository.getAll()
-            } else {
-                repository.search(query)
-            }
+    val incidencias: StateFlow<List<IncidenciaEntity>> = combine(
+        _queryBusqueda,
+        _categoriaFiltro,
+        _prioridadFiltro
+    ) { query, categoria, prioridad ->
+        Triple(query, categoria, prioridad)
+    }.flatMapLatest { (query, categoria, prioridad) ->
+        when {
+            query.isNotBlank() -> repository.buscarIncidencias(query)
+            categoria != null -> repository.filtrarPorCategoria(categoria)
+            prioridad != null -> repository.filtrarPorPrioridad(prioridad)
+            else -> repository.obtenerIncidencias()
         }
-        .onStart { _isLoading.value = true }
-        .onEach { _isLoading.value = false }
-        .catch { e ->
-            _errorMessage.value = e.message
-            _isLoading.value = false
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
-    fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+    fun buscarIncidencias(query: String) {
+        _queryBusqueda.value = query
+        _categoriaFiltro.value = null
+        _prioridadFiltro.value = null
     }
 
-    fun insert(incidencia: IncidenciaEntity) {
+    fun filtrarPorCategoria(categoria: String?) {
+        _categoriaFiltro.value = if (categoria == "Todas") null else categoria
+        _queryBusqueda.value = ""
+        _prioridadFiltro.value = null
+    }
+
+    fun filtrarPorPrioridad(prioridad: String?) {
+        _prioridadFiltro.value = prioridad
+        _queryBusqueda.value = ""
+        _categoriaFiltro.value = null
+    }
+
+    fun obtenerIncidenciaPorId(id: Long): Flow<IncidenciaEntity?> {
+        return repository.obtenerIncidenciaPorId(id)
+    }
+
+    fun insertarIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                repository.insert(incidencia)
-                _errorMessage.value = null
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
+            repository.insertarIncidencia(incidencia)
         }
     }
 
-    fun update(incidencia: IncidenciaEntity) {
+    fun actualizarIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                repository.update(incidencia)
-                _errorMessage.value = null
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
+            repository.actualizarIncidencia(incidencia)
         }
     }
 
-    fun delete(incidencia: IncidenciaEntity) {
+    fun eliminarIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                repository.delete(incidencia)
-                _errorMessage.value = null
-            } catch (e: Exception) {
-                _errorMessage.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
+            repository.eliminarIncidencia(incidencia)
         }
     }
 
-    fun clearError() {
-        _errorMessage.value = null
+    fun cargarDatosPrueba() {
+        viewModelScope.launch {
+            val currentList = repository.obtenerIncidencias().first()
+            if (currentList.isEmpty()) {
+                val datosPrueba = listOf(
+                    IncidenciaEntity(
+                        categoria = "Acceso y autenticación",
+                        tituloNombre = "Acceso a Mosaiq",
+                        descripcion = "Usuario solicita el acceso a la aplicación Mosaiq",
+                        frasesUsuario = "Acceso a Mosaiq",
+                        procedimientoRespuesta = "Incluir el grupo SE00_GA_MosaiqRegUsuarios",
+                        palabrasClave = "mosaiq, radiofisica",
+                        nivelPrioridad = "Normal",
+                        notasComentarios = "Sin observaciones"
+                    ),
+                    IncidenciaEntity(
+                        categoria = "Acceso y autenticación",
+                        tituloNombre = "Acceso carpetas compartidas NAS",
+                        descripcion = "Usuario solicita acceso a carpeta compartida de la NAS",
+                        frasesUsuario = "Solicito acceso a carpeta compartida",
+                        procedimientoRespuesta = "El acceso a las carpetas compartidas del Servicio son gestionadas por el responsable o personas delegadas mediante la aplicación Sevilla NAS. Informática no proporciona permisos a dichas carpetas.",
+                        palabrasClave = "NAS, carpeta compartida",
+                        nivelPrioridad = "Normal",
+                        notasComentarios = "Informática no proporciona permisos directamente."
+                    ),
+                    IncidenciaEntity(
+                        categoria = "Acceso y autenticación",
+                        tituloNombre = "Acceso a Omnicel",
+                        descripcion = "Usuario solicita acceso a Omnicel",
+                        frasesUsuario = "Solicito acceso a Omnicel",
+                        procedimientoRespuesta = "Las credenciales de acceso a Omnicel son proporcionadas por el Supervisor del Servicio o por Farmacia.",
+                        palabrasClave = "omnicel, armario dispensador, farmacia",
+                        nivelPrioridad = "Normal",
+                        notasComentarios = "Validar con responsable del servicio."
+                    )
+                )
+                datosPrueba.forEach { repository.insertarIncidencia(it) }
+            }
+        }
     }
 }

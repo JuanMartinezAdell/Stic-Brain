@@ -7,34 +7,36 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface IncidenciaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(incidencia: IncidenciaEntity)
+    suspend fun insertar(incidencia: IncidenciaEntity)
 
     @Update
-    suspend fun update(incidencia: IncidenciaEntity)
+    suspend fun actualizar(incidencia: IncidenciaEntity)
 
     @Delete
-    suspend fun delete(incidencia: IncidenciaEntity)
+    suspend fun eliminar(incidencia: IncidenciaEntity)
 
     @Query("SELECT * FROM incidencias WHERE id = :id")
-    suspend fun getById(id: Long): IncidenciaEntity?
+    fun obtenerIncidenciaPorId(id: Long): Flow<IncidenciaEntity?>
 
-    @Query("SELECT * FROM incidencias ORDER BY fechaModificacion DESC")
-    fun getAll(): Flow<List<IncidenciaEntity>>
+    @Query("SELECT * FROM incidencias ORDER BY fechaCreacion DESC")
+    fun obtenerIncidencias(): Flow<List<IncidenciaEntity>>
 
     @Query("""
-        SELECT * FROM incidencias 
-        WHERE titulo LIKE '%' || :query || '%' 
-        OR descripcion LIKE '%' || :query || '%' 
-        OR mensajeError LIKE '%' || :query || '%' 
-        OR causa LIKE '%' || :query || '%' 
-        OR solucion LIKE '%' || :query || '%'
-        ORDER BY fechaModificacion DESC
+        SELECT * FROM incidencias
+        WHERE tituloNombre LIKE '%' || :query || '%'
+        OR descripcion LIKE '%' || :query || '%'
+        OR frasesUsuario LIKE '%' || :query || '%'
+        OR procedimientoRespuesta LIKE '%' || :query || '%'
+        OR palabrasClave LIKE '%' || :query || '%'
+        OR categoria LIKE '%' || :query || '%'
+        OR nivelPrioridad LIKE '%' || :query || '%'
+        ORDER BY fechaCreacion DESC
     """)
-    fun search(query: String): Flow<List<IncidenciaEntity>>
+    fun buscarIncidencias(query: String): Flow<List<IncidenciaEntity>>
 
-    @Query("SELECT * FROM incidencias WHERE categoriaId = :categoriaId")
-    fun getByCategoria(categoriaId: Long): Flow<List<IncidenciaEntity>>
+    @Query("SELECT * FROM incidencias WHERE categoria = :categoria ORDER BY fechaCreacion DESC")
+    fun filtrarPorCategoria(categoria: String): Flow<List<IncidenciaEntity>>
 
-    @Query("SELECT * FROM incidencias WHERE aplicacionId = :aplicacionId")
-    fun getByAplicacion(aplicacionId: Long): Flow<List<IncidenciaEntity>>
+    @Query("SELECT * FROM incidencias WHERE nivelPrioridad = :prioridad ORDER BY fechaCreacion DESC")
+    fun filtrarPorPrioridad(prioridad: String): Flow<List<IncidenciaEntity>>
 }
