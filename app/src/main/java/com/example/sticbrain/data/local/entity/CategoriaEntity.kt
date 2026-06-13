@@ -8,5 +8,7 @@ data class CategoriaEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val nombre: String,
-    val descripcion: String
+    val descripcion: String? = null,
+    val activa: Boolean = true,
+    val fechaCreacion: Long = System.currentTimeMillis()
 )

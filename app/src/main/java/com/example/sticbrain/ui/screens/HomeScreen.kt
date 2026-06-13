@@ -15,12 +15,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
 @Composable
 fun HomeScreen(
     incidencias: List<IncidenciaEntity>,
+    categorias: List<CategoriaEntity>,
     onNavigateToSearch: () -> Unit,
     onNavigateToNewIncident: () -> Unit,
     onNavigateToSupport: () -> Unit,
@@ -52,7 +54,7 @@ fun HomeScreen(
             
             Column(modifier = Modifier.padding(16.dp)) {
                 StatsSection(incidencias)
-                FilterSection()
+                FilterSection(categorias)
                 IncidentsListSection(incidencias, onIncidentClick = onNavigateToIncidentDetail)
             }
         }
@@ -85,19 +87,25 @@ fun StatCard(count: String, label: String, color: Color, modifier: Modifier = Mo
 }
 
 @Composable
-fun FilterSection(modifier: Modifier = Modifier) {
-    val categories = listOf("Todas", "Acceso", "Hardware", "Red", "Software", "Correo", "Seguridad", "Impresión", "Soporte remoto")
+fun FilterSection(categorias: List<CategoriaEntity>, modifier: Modifier = Modifier) {
     var selectedCategory by remember { mutableStateOf("Todas") }
 
     LazyRow(
         modifier = modifier.padding(vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(categories) { category ->
+        item {
             SticChip(
-                text = category,
-                isSelected = selectedCategory == category,
-                onClick = { selectedCategory = category }
+                text = "Todas",
+                isSelected = selectedCategory == "Todas",
+                onClick = { selectedCategory = "Todas" }
+            )
+        }
+        items(categorias) { categoria ->
+            SticChip(
+                text = categoria.nombre,
+                isSelected = selectedCategory == categoria.nombre,
+                onClick = { selectedCategory = categoria.nombre }
             )
         }
     }
@@ -191,6 +199,7 @@ fun IncidentEntryCard(
 fun HomeScreenPreview() {
     HomeScreen(
         incidencias = emptyList(),
+        categorias = emptyList(),
         onNavigateToSearch = {},
         onNavigateToNewIncident = {},
         onNavigateToSupport = {},

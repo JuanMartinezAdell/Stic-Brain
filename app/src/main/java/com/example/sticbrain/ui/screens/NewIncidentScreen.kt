@@ -15,12 +15,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NewIncidentScreen(
+    categorias: List<CategoriaEntity>,
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToSupport: () -> Unit = {},
@@ -41,13 +43,6 @@ fun NewIncidentScreen(
     var titleError by remember { mutableStateOf(false) }
     var descriptionError by remember { mutableStateOf(false) }
     var procedureError by remember { mutableStateOf(false) }
-
-    val categories = listOf(
-        "Acceso y autenticación", "Hardware", "Red y conectividad", "Software",
-        "Correo electrónico", "Seguridad", "Sistemas operativos", "Impresión y escaneo",
-        "Servicios y aplicaciones internas", "Telefonía", "Soporte remoto",
-        "Consultas generales y formación"
-    )
 
     Scaffold(
         containerColor = SticBackground,
@@ -70,20 +65,24 @@ fun NewIncidentScreen(
                     .padding(16.dp)
             ) {
                 Text(text = "CATEGORÍA *", color = if (categoryError) SticRed else SticTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                FlowRow(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    categories.forEach { cat ->
-                        SticChip(
-                            text = cat,
-                            isSelected = category == cat,
-                            onClick = { 
-                                category = cat
-                                categoryError = false
-                            }
-                        )
+                if (categorias.isEmpty()) {
+                    Text(text = "No hay categorías disponibles", color = SticTextSecondary, fontSize = 14.sp)
+                } else {
+                    FlowRow(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categorias.forEach { cat ->
+                            SticChip(
+                                text = cat.nombre,
+                                isSelected = category == cat.nombre,
+                                onClick = { 
+                                    category = cat.nombre
+                                    categoryError = false
+                                }
+                            )
+                        }
                     }
                 }
                 if (categoryError) {
@@ -187,5 +186,5 @@ fun NewIncidentScreen(
 @Preview(showBackground = true)
 @Composable
 fun NewIncidentScreenPreview() {
-    NewIncidentScreen()
+    NewIncidentScreen(categorias = emptyList())
 }

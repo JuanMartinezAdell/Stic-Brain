@@ -4,35 +4,74 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.repository.CategoriaRepository
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class CategoriaViewModel(private val repository: CategoriaRepository) : ViewModel() {
 
-    val categorias: StateFlow<List<CategoriaEntity>> = repository.getAll()
+    private val _query = MutableStateFlow("")
+
+    val categorias: StateFlow<List<CategoriaEntity>> = repository.obtenerCategorias()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
 
-    fun insert(categoria: CategoriaEntity) {
+    val categoriasActivas: StateFlow<List<CategoriaEntity>> = repository.obtenerCategoriasActivas()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun obtenerCategoriaPorId(id: Long): Flow<CategoriaEntity?> {
+        return repository.obtenerCategoriaPorId(id)
+    }
+
+    fun buscarCategorias(query: String) {
+        _query.value = query
+    }
+
+    fun insertarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
-            repository.insert(categoria)
+            repository.insertarCategoria(categoria)
         }
     }
 
-    fun update(categoria: CategoriaEntity) {
+    fun actualizarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
-            repository.update(categoria)
+            repository.actualizarCategoria(categoria)
         }
     }
 
-    fun delete(categoria: CategoriaEntity) {
+    fun eliminarCategoria(categoria: CategoriaEntity) {
         viewModelScope.launch {
-            repository.delete(categoria)
+            repository.eliminarCategoria(categoria)
+        }
+    }
+
+    fun cargarCategoriasInicialesSiNecesario() {
+        viewModelScope.launch {
+            if (repository.contarCategorias() == 0) {
+                val categoriasIniciales = listOf(
+                    "Acceso y autenticación",
+                    "Hardware",
+                    "Red y conectividad",
+                    "Software",
+                    "Correo electrónico",
+                    "Seguridad",
+                    "Sistemas operativos",
+                    "Impresión y escaneo",
+                    "Servicios y aplicaciones internas",
+                    "Telefonía",
+                    "Soporte remoto",
+                    "Consultas generales y formación"
+                )
+                categoriasIniciales.forEach { nombre ->
+                    repository.insertarCategoria(CategoriaEntity(nombre = nombre))
+                }
+            }
         }
     }
 }

@@ -6,19 +6,25 @@ import kotlinx.coroutines.flow.Flow
 
 class CategoriaRepository(private val categoriaDao: CategoriaDao) {
 
-    fun getAll(): Flow<List<CategoriaEntity>> = categoriaDao.getAll()
+    fun obtenerCategorias(): Flow<List<CategoriaEntity>> = categoriaDao.obtenerCategorias()
 
-    suspend fun getById(id: Long): CategoriaEntity? = categoriaDao.getById(id)
+    fun obtenerCategoriasActivas(): Flow<List<CategoriaEntity>> = categoriaDao.obtenerCategoriasActivas()
 
-    suspend fun insert(categoria: CategoriaEntity) {
-        categoriaDao.insert(categoria)
+    fun obtenerCategoriaPorId(id: Long): Flow<CategoriaEntity?> = categoriaDao.obtenerCategoriaPorId(id)
+
+    fun buscarCategorias(query: String): Flow<List<CategoriaEntity>> = categoriaDao.buscarCategorias(query)
+
+    suspend fun insertarCategoria(categoria: CategoriaEntity) {
+        categoriaDao.insertar(categoria)
     }
 
-    suspend fun update(categoria: CategoriaEntity) {
-        categoriaDao.update(categoria)
+    suspend fun actualizarCategoria(categoria: CategoriaEntity) {
+        categoriaDao.actualizar(categoria)
     }
 
-    suspend fun delete(categoria: CategoriaEntity) {
-        categoriaDao.delete(categoria)
+    suspend fun eliminarCategoria(categoria: CategoriaEntity) {
+        categoriaDao.eliminar(categoria)
     }
+
+    suspend fun contarCategorias(): Int = categoriaDao.contarCategorias()
 }

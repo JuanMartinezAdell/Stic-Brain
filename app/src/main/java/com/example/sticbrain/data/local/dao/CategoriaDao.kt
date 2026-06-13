@@ -7,17 +7,26 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoriaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(categoria: CategoriaEntity)
+    suspend fun insertar(categoria: CategoriaEntity)
 
     @Update
-    suspend fun update(categoria: CategoriaEntity)
+    suspend fun actualizar(categoria: CategoriaEntity)
 
     @Delete
-    suspend fun delete(categoria: CategoriaEntity)
+    suspend fun eliminar(categoria: CategoriaEntity)
 
     @Query("SELECT * FROM categorias WHERE id = :id")
-    suspend fun getById(id: Long): CategoriaEntity?
+    fun obtenerCategoriaPorId(id: Long): Flow<CategoriaEntity?>
 
     @Query("SELECT * FROM categorias ORDER BY nombre ASC")
-    fun getAll(): Flow<List<CategoriaEntity>>
+    fun obtenerCategorias(): Flow<List<CategoriaEntity>>
+
+    @Query("SELECT * FROM categorias WHERE activa = 1 ORDER BY nombre ASC")
+    fun obtenerCategoriasActivas(): Flow<List<CategoriaEntity>>
+
+    @Query("SELECT * FROM categorias WHERE nombre LIKE '%' || :query || '%' ORDER BY nombre ASC")
+    fun buscarCategorias(query: String): Flow<List<CategoriaEntity>>
+
+    @Query("SELECT COUNT(*) FROM categorias")
+    suspend fun contarCategorias(): Int
 }

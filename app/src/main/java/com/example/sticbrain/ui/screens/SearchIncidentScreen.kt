@@ -2,6 +2,7 @@ package com.example.sticbrain.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,14 +16,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.ui.theme.*
 
 @Composable
 fun SearchIncidentScreen(
     incidencias: List<IncidenciaEntity>,
+    categorias: List<CategoriaEntity>,
     queryBusqueda: String,
     onQueryChange: (String) -> Unit,
+    onCategoriaSelected: (String) -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToNewIncident: () -> Unit = {},
     onNavigateToSupport: () -> Unit = {},
@@ -61,6 +65,24 @@ fun SearchIncidentScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        SticChip(
+                            text = "Todas",
+                            isSelected = true,
+                            onClick = { onCategoriaSelected("Todas") }
+                        )
+                    }
+                    items(categorias) { categoria ->
+                        SticChip(
+                            text = categoria.nombre,
+                            onClick = { onCategoriaSelected(categoria.nombre) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
                     text = "${incidencias.size} Entradas en la base de conocimiento",
                     color = SticTextSecondary,
@@ -96,6 +118,7 @@ fun SearchIncidentScreen(
 fun SearchIncidentScreenPreview() {
     SearchIncidentScreen(
         incidencias = emptyList(),
+        categorias = emptyList(),
         queryBusqueda = "",
         onQueryChange = {}
     )

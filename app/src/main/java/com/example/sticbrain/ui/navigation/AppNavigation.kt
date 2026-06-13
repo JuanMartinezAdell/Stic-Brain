@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 
 import com.example.sticbrain.data.local.database.SticBrainDatabase
+import com.example.sticbrain.data.repository.CategoriaRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import com.example.sticbrain.data.repository.ProveedorRepository
 import com.example.sticbrain.ui.screens.*
@@ -35,9 +36,15 @@ fun AppNavigation() {
         factory = IncidenciaViewModelFactory(incidenciaRepository)
     )
 
+    val categoriaRepository = CategoriaRepository(database.categoriaDao())
+    val categoriaViewModel: CategoriaViewModel = viewModel(
+        factory = CategoriaViewModelFactory(categoriaRepository)
+    )
+
     // Carga inicial de datos de prueba
     proveedorViewModel.cargarDatosPrueba()
     incidenciaViewModel.cargarDatosPrueba()
+    categoriaViewModel.cargarCategoriasInicialesSiNecesario()
 
     NavHost(
         navController = navController,
@@ -45,8 +52,10 @@ fun AppNavigation() {
     ) {
         composable(AppScreens.Home.route) {
             val incidencias by incidenciaViewModel.incidencias.collectAsState()
+            val categorias by categoriaViewModel.categoriasActivas.collectAsState()
             HomeScreen(
                 incidencias = incidencias,
+                categorias = categorias,
                 onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) },
                 onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
                 onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
@@ -58,11 +67,14 @@ fun AppNavigation() {
 
         composable(AppScreens.Busqueda.route) {
             val incidencias by incidenciaViewModel.incidencias.collectAsState()
+            val categorias by categoriaViewModel.categoriasActivas.collectAsState()
             val query by incidenciaViewModel.queryBusqueda.collectAsState()
             SearchIncidentScreen(
                 incidencias = incidencias,
+                categorias = categorias,
                 queryBusqueda = query,
                 onQueryChange = { incidenciaViewModel.buscarIncidencias(it) },
+                onCategoriaSelected = { incidenciaViewModel.filtrarPorCategoria(it) },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
@@ -82,7 +94,9 @@ fun AppNavigation() {
         }
 
         composable(AppScreens.IncidenciaCrear.route) {
+            val categorias by categoriaViewModel.categoriasActivas.collectAsState()
             NewIncidentScreen(
+                categorias = categorias,
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
