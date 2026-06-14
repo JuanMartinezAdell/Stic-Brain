@@ -5,7 +5,7 @@ import com.example.sticbrain.data.local.entity.CategoriaEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repositorio encargado de gestionar las categorías.
+ * Gestionar Filtros por categoria.
  */
 class CategoriaRepository(private val categoriaDao: CategoriaDao) {
 

@@ -5,7 +5,7 @@ import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repositorio de fichas de conocimiento.
+ * Repositorio Incidencias
  * 
  * Esta clase separa el ViewModel del DAO (acceso a Room). Su función es
  * centralizar el acceso a los datos de las fichas, proporcionando métodos

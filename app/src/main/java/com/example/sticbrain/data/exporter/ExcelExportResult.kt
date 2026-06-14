@@ -1,7 +1,7 @@
 package com.example.sticbrain.data.exporter
 
 /**
- * Representa el resumen de una operación de exportación a Excel.
+ * Representa el resumen de la operación de exportación a Excel.
  */
 data class ExcelExportResult(
     val totalFichas: Int,

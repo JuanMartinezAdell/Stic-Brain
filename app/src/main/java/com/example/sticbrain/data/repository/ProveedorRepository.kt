@@ -5,7 +5,7 @@ import com.example.sticbrain.data.local.entity.ProveedorEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Repositorio encargado de gestionar el directorio de proveedores de soporte.
+ * Repositorio contactos
  */
 class ProveedorRepository(private val proveedorDao: ProveedorDao) {
 

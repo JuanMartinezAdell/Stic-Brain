@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Entidad que representa una Ficha de Conocimiento (incidencia) en la base de datos.
+ * Incidencias
  * 
  * Esta clase define la estructura de la tabla "incidencias", alineada con
  * los campos requeridos por la plantilla Excel de la base de conocimiento TIC.

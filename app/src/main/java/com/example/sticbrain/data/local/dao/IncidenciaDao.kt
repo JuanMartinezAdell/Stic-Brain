@@ -6,9 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Interfaz para definir las operaciones de la tabla "incidencias" en Room.
- * 
- * Los DAO (Data Access Object) contienen las consultas SQL y los métodos
- * para insertar, actualizar o eliminar datos.
  */
 @Dao
 interface IncidenciaDao {

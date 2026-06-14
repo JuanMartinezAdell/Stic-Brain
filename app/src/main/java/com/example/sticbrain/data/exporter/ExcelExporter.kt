@@ -4,7 +4,7 @@ import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import java.io.OutputStream
 
 /**
- * Interfaz para el servicio de exportación de datos a Excel.
+ * Interfaz para exportar datos a Excel.
  */
 interface ExcelExporter {
     /**

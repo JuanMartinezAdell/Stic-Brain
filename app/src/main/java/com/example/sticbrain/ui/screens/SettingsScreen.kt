@@ -67,7 +67,7 @@ fun SettingsScreen(
         topBar = {
             SticTopHeader(
                 title = "Ajustes y utilidades",
-                subtitle = "Configuración y mantenimiento de Stic Brain",
+                subtitle = "Configuración y mantenimiento",
                 showBackButton = true,
                 onBackClick = onNavigateBack
             )
@@ -104,7 +104,7 @@ fun SettingsScreen(
             }
 
             Text(
-                text = "Administra la base de conocimiento, categorías, soporte y futuras funciones de IA.",
+                text = "Administra la base de datos, categorías, soporte y futuras funcionalidades.",
                 color = SticTextSecondary,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -157,11 +157,11 @@ fun SettingsScreen(
             SettingsSection(title = "Chatbot técnico (Próximamente)") {
                 SettingsOptionItem(
                     icon = Icons.Default.SmartToy,
-                    title = "Configurar asistente IA",
+                    title = "Proximamente asistente IA",
                     onClick = onChatbotSettings
                 )
             }
-
+            /** Para pruebas
             // GRUPO: HERRAMIENTAS TÉCNICAS
             SettingsSection(title = "Herramientas") {
                 SettingsOptionItem(
@@ -170,7 +170,7 @@ fun SettingsScreen(
                     titleColor = SticRed,
                     onClick = onClearDemoData
                 )
-            }
+            }*/
 
             // Información técnica de la versión
             AppInfoSection()
@@ -180,7 +180,7 @@ fun SettingsScreen(
     }
 }
 
-/** Tarjeta para mostrar estados de espera con spinner. */
+/** Card para mostrar estados de espera con spinner. */
 @Composable
 private fun StatusCard(text: String, isLoading: Boolean) {
     SticCard {
@@ -329,19 +329,22 @@ private fun SettingsOptionItem(
     }
 }
 
-/** Bloque con datos técnicos de la aplicación. */
+//Bloque con datos técnicos de la aplicación.
 @Composable
 private fun AppInfoSection() {
     SettingsSection(title = "Información del sistema") {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
-            AppInfoRow(label = "Versión", value = "1.0.0 Stable")
-            AppInfoRow(label = "Arquitectura", value = "MVVM + Compose")
-            AppInfoRow(label = "Base de datos", value = "SQLite / Room")
-            
+            AppInfoRow(label = "Versión", value = "1.0.0")
+            AppInfoRow(label = "Avido de responsabilidad", value="")
+            AppInfoRow(label = "", value = "El autor de la aplicación no se hace responsable del uso indebido de la información almacenada, importada, exportada o compartida mediante la aplicación.\n" +
+
+                                            "El usuario es el único responsable de garantizar que los datos introducidos en Stic Brain se utilizan de forma adecuada, segura y conforme a la normativa aplicable, incluyendo la normativa de protección de datos, confidencialidad, seguridad de la información y políticas internas de su organizacion.\n" +
+
+                                            "El autor no se hace responsable de pérdidas de información, accesos no autorizados, divulgación accidental de datos, uso incorrecto de procedimientos, daños derivados de la interpretación de la información registrada o cualquier consecuencia derivada del uso de la aplicación fuera de su finalidad prevista.")
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(
-                text = "Stic Brain es una base de conocimiento optimizada para el entorno sanitario TIC.",
+                text = "Stic Brain © 2026 Juan Adell. Todos los derechos reservados.",
                 color = SticTextSecondary,
                 fontSize = 13.sp,
                 lineHeight = 18.sp

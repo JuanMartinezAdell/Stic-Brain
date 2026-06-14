@@ -21,7 +21,6 @@ import com.example.sticbrain.R
 
 /**
  * Paleta de colores Stic Brain.
- * Define la identidad visual azul y blanca orientada al entorno sanitario.
  */
 val SticBlue = Color(0xFF0D47A1)
 val SticBlueLight = Color(0xFF1976D2)
@@ -37,7 +36,7 @@ val SticOrange = Color(0xFFF57C00)
 val SticRed = Color(0xFFD32F2F)
 
 /**
- * Cabecera superior común para todas las pantallas.
+ * Cabecera superior para todas las pantallas.
  */
 @Composable
 fun SticTopHeader(
@@ -92,7 +91,7 @@ fun SticTopHeader(
 }
 
 /**
- * Tarjeta base para contenedores de información.
+ * Card base para container de información.
  */
 @Composable
 fun SticCard(

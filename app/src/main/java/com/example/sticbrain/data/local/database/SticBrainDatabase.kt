@@ -19,7 +19,7 @@ import com.example.sticbrain.data.local.entity.*
         CategoriaEntity::class,
         ProveedorEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class SticBrainDatabase : RoomDatabase() {
@@ -46,7 +46,9 @@ abstract class SticBrainDatabase : RoomDatabase() {
                     context.applicationContext,
                     SticBrainDatabase::class.java,
                     "stic_brain_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

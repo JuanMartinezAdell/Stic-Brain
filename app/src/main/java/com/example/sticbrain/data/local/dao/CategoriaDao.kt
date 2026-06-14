@@ -5,7 +5,7 @@ import com.example.sticbrain.data.local.entity.CategoriaEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Operaciones para la tabla de categorías de la base de conocimiento.
+ * Operaciones para la tabla de categorías
  */
 @Dao
 interface CategoriaDao {

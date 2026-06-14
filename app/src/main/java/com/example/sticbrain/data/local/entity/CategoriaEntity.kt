@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Entidad que representa una Categoría técnica en la base de datos.
+ * Categoría técnica en la base de datos.
  * 
  * Sirve para clasificar las fichas de conocimiento y organizar
  * la base de datos de forma jerárquica por áreas de soporte.

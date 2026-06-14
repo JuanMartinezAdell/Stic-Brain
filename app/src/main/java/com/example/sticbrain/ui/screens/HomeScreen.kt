@@ -60,7 +60,7 @@ fun HomeScreen(
             // Cabecera superior con acceso a Ajustes
             SticTopHeader(
                 title = "Stic Brain",
-                subtitle = "Base de conocimiento TIC · Hospital",
+                subtitle = "Base de conocimientos TIC - Provinciales Sevila",
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Ajustes", tint = SticWhite)
@@ -83,9 +83,9 @@ fun HomeScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = SticSky),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Icon(Icons.Default.Category, contentDescription = null, tint = SticBlue)
+                    Icon(Icons.Default.FilterList, contentDescription = null, tint = SticBlue)
                     Spacer(Modifier.width(8.dp))
-                    Text(text = "Gestionar categorías", color = SticBlue, fontWeight = FontWeight.Bold)
+                    Text(text = "Categorías", color = SticBlue, fontWeight = FontWeight.Bold)
                 }
 
                 // Carrusel de filtros por área técnica

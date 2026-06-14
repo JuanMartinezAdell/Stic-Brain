@@ -3,7 +3,7 @@ package com.example.sticbrain.data.importer
 import java.io.InputStream
 
 /**
- * Interfaz para el servicio de importación de archivos Excel.
+ * Interfaz para importación de archivos Excel.
  */
 interface ExcelImporter {
     /**

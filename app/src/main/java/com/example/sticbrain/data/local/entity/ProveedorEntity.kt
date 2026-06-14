@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Entidad que representa un Proveedor o Servicio de Soporte técnico externo.
+ * Contactos
  * 
  * Almacena los datos de contacto y condiciones de escalado para que
  * los técnicos puedan contactar rápidamente con el soporte adecuado.
