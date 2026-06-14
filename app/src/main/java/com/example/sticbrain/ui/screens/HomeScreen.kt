@@ -81,11 +81,34 @@ fun HomeScreen(
                     onClick = onNavigateToCategories,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SticSky),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.FilterList, contentDescription = null, tint = SticBlue)
-                    Spacer(Modifier.width(8.dp))
-                    Text(text = "Categorías", color = SticBlue, fontWeight = FontWeight.Bold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = null,
+                            tint = SticBlue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Categorías",
+                                color = SticBlue,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Gestionar filtros",
+                                color = SticTextSecondary,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
                 }
 
                 // Carrusel de filtros por área técnica

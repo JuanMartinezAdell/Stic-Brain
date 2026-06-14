@@ -113,8 +113,9 @@ fun SettingsScreen(
             // GRUPO: GESTIÓN DE DATOS
             SettingsSection(title = "Base de conocimiento") {
                 SettingsOptionItem(
-                    icon = Icons.Default.Category,
-                    title = "Gestionar categorías",
+                    icon = Icons.Default.FilterList,
+                    title = "Categorías",
+                    subtitle = "Gestionar filtros",
                     onClick = onNavigateToCategories
                 )
                 SettingsOptionItem(
