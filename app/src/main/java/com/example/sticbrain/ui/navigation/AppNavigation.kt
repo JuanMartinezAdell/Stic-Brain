@@ -14,13 +14,18 @@ import androidx.navigation.navArgument
 
 import com.example.sticbrain.data.importer.ExcelImporterImpl
 import com.example.sticbrain.data.exporter.ExcelExporterImpl
+import com.example.sticbrain.data.auth.GoogleAccountManager
 import com.example.sticbrain.data.local.database.SticBrainDatabase
 import com.example.sticbrain.data.repository.CategoriaRepository
+import com.example.sticbrain.data.repository.ChatbotConfigRepository
+import com.example.sticbrain.data.repository.ChatMessageRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import com.example.sticbrain.data.repository.ProveedorRepository
 import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.screens.*
 import com.example.sticbrain.viewmodel.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Componente principal de navegación de la aplicación.
@@ -59,6 +64,17 @@ fun AppNavigation() {
         factory = CategoriaViewModelFactory(categoriaRepository)
     )
 
+    val chatMessageRepository = ChatMessageRepository(database.chatMessageDao())
+    val chatbotConfigRepository = ChatbotConfigRepository(database.chatbotConfigDao())
+    
+    val chatbotViewModel: ChatbotViewModel = viewModel(
+        factory = ChatbotViewModelFactory(incidenciaRepository, chatMessageRepository, chatbotConfigRepository)
+    )
+    
+    val chatbotConfigViewModel: ChatbotConfigViewModel = viewModel(
+        factory = ChatbotConfigViewModelFactory(chatbotConfigRepository)
+    )
+
     // CARGA DE DATOS INICIALES
     // Si la base de datos está vacía, se insertan los ejemplos de la plantilla.
     LaunchedEffect(Unit) {
@@ -85,6 +101,7 @@ fun AppNavigation() {
                 onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
                 onNavigateToCategories = { navController.navigate(AppScreens.Categorias.route) },
                 onNavigateToSettings = { navController.navigate(AppScreens.Ajustes.route) },
+                onNavigateToChatbot = { navController.navigate(AppScreens.Chatbot.route) },
                 onNavigateToIncidentDetail = { id ->
                     navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id))
                 }
@@ -120,6 +137,9 @@ fun AppNavigation() {
                 onNavigateToProviders = {
                     navController.navigate(AppScreens.Proveedores.route)
                 },
+                onNavigateToChatbot = {
+                    navController.navigate(AppScreens.Chatbot.route)
+                },
                 onImportExcelFile = { uri ->
                     incidenciaViewModel.importarExcelDesdeUri(context, uri, excelImporter)
                 },
@@ -127,7 +147,67 @@ fun AppNavigation() {
                     incidenciaViewModel.exportarExcelAUri(context, uri, excelExporter)
                 },
                 onResetImportState = { incidenciaViewModel.resetImportState() },
-                onResetExportState = { incidenciaViewModel.resetExportState() }
+                onResetExportState = { incidenciaViewModel.resetExportState() },
+                onNavigateToChatbotSettings = {
+                    navController.navigate(AppScreens.ChatbotSettings.route)
+                }
+            )
+        }
+
+        composable(AppScreens.ChatbotSettings.route) {
+            val configUiState by chatbotConfigViewModel.uiState.collectAsState()
+            val scope = rememberCoroutineScope()
+            val googleManager = GoogleAccountManager(context)
+
+            ChatbotSettingsScreen(
+                uiState = configUiState,
+                onModeChange = chatbotConfigViewModel::onModeChange,
+                onApiKeyChange = chatbotConfigViewModel::onApiKeyChange,
+                onModelChange = chatbotConfigViewModel::onModelChange,
+                onSaveConfig = chatbotConfigViewModel::guardarConfiguracion,
+                onDeleteApiKey = chatbotConfigViewModel::eliminarApiKey,
+                onConfirmGoogleAccount = {
+                    scope.launch {
+                        // El clientId se obtiene de la consola de Google Cloud (Web Client ID)
+                        val result = googleManager.confirmarCuentaGoogle(
+                            serverClientId = "TU_CLIENT_ID_DE_GOOGLE.apps.googleusercontent.com"
+                        )
+                        result?.let {
+                            chatbotConfigViewModel.onGoogleAccountConfirmed(it.email, it.displayName)
+                        }
+                    }
+                },
+                onRemoveGoogleAccount = chatbotConfigViewModel::eliminarCuentaGoogle,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHome = { navController.navigate(AppScreens.Home.route) },
+                onNavigateToChatbot = { navController.navigate(AppScreens.Chatbot.route) }
+            )
+        }
+
+        composable(AppScreens.Chatbot.route) {
+            val messages by chatbotViewModel.messages.collectAsState()
+            val currentQuestion by chatbotViewModel.currentQuestion.collectAsState()
+            val isLoading by chatbotViewModel.isLoading.collectAsState()
+            val modeLabel by chatbotViewModel.currentModeLabel.collectAsState()
+
+            ChatbotScreen(
+                messages = messages,
+                currentQuestion = currentQuestion,
+                isLoading = isLoading,
+                chatbotModeLabel = modeLabel,
+                onQuestionChange = chatbotViewModel::onQuestionChange,
+                onSendQuestion = chatbotViewModel::sendQuestion,
+                onClearConversation = chatbotViewModel::clearConversation,
+                onOpenIncidentDetail = { id ->
+                    navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id)) {
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToHome = { navController.navigate(AppScreens.Home.route) },
+                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) },
+                onNavigateToNewIncident = { navController.navigate(AppScreens.IncidenciaCrear.route) },
+                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) },
+                onNavigateToSettings = { navController.navigate(AppScreens.Ajustes.route) }
             )
         }
 

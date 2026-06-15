@@ -36,6 +36,7 @@ fun HomeScreen(
     onNavigateToSupport: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToChatbot: () -> Unit,
     onNavigateToIncidentDetail: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -79,7 +80,7 @@ fun HomeScreen(
                 // Botón de acceso directo a categorías
                 Button(
                     onClick = onNavigateToCategories,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = SticSky),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
@@ -105,6 +106,41 @@ fun HomeScreen(
                             Text(
                                 text = "Gestionar filtros",
                                 color = SticTextSecondary,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+
+                // Botón de acceso al Chatbot
+                Button(
+                    onClick = onNavigateToChatbot,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = SticBlue),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SmartToy,
+                            contentDescription = null,
+                            tint = SticWhite,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Consultar chatbot",
+                                color = SticWhite,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Pregunta a la base de conocimiento",
+                                color = SticSky.copy(alpha = 0.8f),
                                 fontSize = 11.sp
                             )
                         }
@@ -270,6 +306,7 @@ fun HomeScreenPreview() {
         onNavigateToSupport = {},
         onNavigateToCategories = {},
         onNavigateToSettings = {},
+        onNavigateToChatbot = {},
         onNavigateToIncidentDetail = {}
     )
 }

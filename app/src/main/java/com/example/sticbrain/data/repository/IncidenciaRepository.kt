@@ -52,4 +52,11 @@ class IncidenciaRepository(private val incidenciaDao: IncidenciaDao) {
     suspend fun eliminarIncidencia(incidencia: IncidenciaEntity) {
         incidenciaDao.eliminar(incidencia)
     }
+
+    /**
+     * Obtiene una lista de incidencias filtrando por una lista de identificadores.
+     */
+    suspend fun obtenerIncidenciasPorIds(ids: List<Long>): List<IncidenciaEntity> {
+        return incidenciaDao.obtenerIncidenciasPorIds(ids)
+    }
 }

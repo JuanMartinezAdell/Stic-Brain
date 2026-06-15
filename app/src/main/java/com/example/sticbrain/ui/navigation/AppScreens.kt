@@ -17,4 +17,6 @@ sealed class AppScreens(val route: String) {
     }
     object Categorias : AppScreens("categorias")
     object Ajustes : AppScreens("ajustes")
+    object Chatbot : AppScreens("chatbot")
+    object ChatbotSettings : AppScreens("chatbot_settings")
 }

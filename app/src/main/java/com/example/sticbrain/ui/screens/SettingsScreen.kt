@@ -45,9 +45,10 @@ fun SettingsScreen(
     onNavigateToSupport: () -> Unit = {},
     onNavigateToCategories: () -> Unit = {},
     onNavigateToProviders: () -> Unit = {},
+    onNavigateToChatbot: () -> Unit = {},
+    onNavigateToChatbotSettings: () -> Unit = {},
     onBackupDatabase: () -> Unit = {},
     onRestoreDatabase: () -> Unit = {},
-    onChatbotSettings: () -> Unit = {},
     onClearDemoData: () -> Unit = {}
 ) {
     // Selector para abrir archivo Excel
@@ -154,12 +155,19 @@ fun SettingsScreen(
                 )
             }
 
-            // GRUPO: INTELIGENCIA ARTIFICIAL (DISEÑO FUTURO)
-            SettingsSection(title = "Chatbot técnico (Próximamente)") {
+            // GRUPO: INTELIGENCIA ARTIFICIAL E IA GENERATIVA
+            SettingsSection(title = "Inteligencia Artificial") {
                 SettingsOptionItem(
-                    icon = Icons.Default.SmartToy,
-                    title = "Proximamente asistente IA",
-                    onClick = onChatbotSettings
+                    icon = Icons.Default.Chat,
+                    title = "Chatbot técnico",
+                    subtitle = "Consulta las fichas guardadas.",
+                    onClick = onNavigateToChatbot
+                )
+                SettingsOptionItem(
+                    icon = Icons.Default.SettingsSuggest,
+                    title = "Configuración de IA",
+                    subtitle = "Configura el motor (Local o Gemini).",
+                    onClick = onNavigateToChatbotSettings
                 )
             }
             /** Para pruebas
@@ -370,8 +378,11 @@ private fun AppInfoRow(label: String, value: String) {
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    SettingsScreen(
-        importUiState = ImportUiState(),
-        exportUiState = ExportUiState()
-    )
+    SticBrainTheme {
+        SettingsScreen(
+            importUiState = ImportUiState(),
+            exportUiState = ExportUiState(),
+            onNavigateToChatbot = {}
+        )
+    }
 }

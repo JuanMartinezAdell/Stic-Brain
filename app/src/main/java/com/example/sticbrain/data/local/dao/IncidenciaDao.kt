@@ -61,4 +61,6 @@ interface IncidenciaDao {
     /** Filtra las fichas según su importancia (Baja, Media, Alta, Crítica). */
     @Query("SELECT * FROM incidencias WHERE nivelPrioridad = :prioridad ORDER BY fechaCreacion DESC")
     fun filtrarPorPrioridad(prioridad: String): Flow<List<IncidenciaEntity>>
+    @Query("SELECT * FROM incidencias WHERE id IN (:ids)")
+    suspend fun obtenerIncidenciasPorIds(ids: List<Long>): List<IncidenciaEntity>
 }

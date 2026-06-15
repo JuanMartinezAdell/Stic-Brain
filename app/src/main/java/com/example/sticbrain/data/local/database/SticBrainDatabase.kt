@@ -17,9 +17,11 @@ import com.example.sticbrain.data.local.entity.*
     entities = [
         IncidenciaEntity::class,
         CategoriaEntity::class,
-        ProveedorEntity::class
+        ProveedorEntity::class,
+        ChatMessageEntity::class,
+        ChatbotConfigEntity::class
     ],
-    version = 2,
+    version = 5,
     exportSchema = false
 )
 abstract class SticBrainDatabase : RoomDatabase() {
@@ -32,6 +34,12 @@ abstract class SticBrainDatabase : RoomDatabase() {
     
     /** Acceso a los proveedores de soporte técnico */
     abstract fun proveedorDao(): ProveedorDao
+
+    /** Acceso al historial de mensajes del chatbot */
+    abstract fun chatMessageDao(): ChatMessageDao
+
+    /** Acceso a la configuración del chatbot */
+    abstract fun chatbotConfigDao(): ChatbotConfigDao
 
     companion object {
         @Volatile
