@@ -13,6 +13,7 @@ data class ChatbotConfigUiState(
     val maxContextIncidents: Int = 5,
     val responseStyle: ChatbotResponseStyle = ChatbotResponseStyle.PROCEDIMIENTO_PASO_A_PASO,
     val detailLevel: ChatbotDetailLevel = ChatbotDetailLevel.MEDIO,
+    val allowExternalSearchWhenNoLocalInfo: Boolean = true,
 
     val googleEmail: String? = null,
     val googleDisplayName: String? = null,

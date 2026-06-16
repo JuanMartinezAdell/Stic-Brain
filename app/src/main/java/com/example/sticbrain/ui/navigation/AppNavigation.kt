@@ -172,6 +172,7 @@ fun AppNavigation() {
                 onMaxContextIncidentsChange = chatbotConfigViewModel::onMaxContextIncidentsChange,
                 onResponseStyleChange = chatbotConfigViewModel::onResponseStyleChange,
                 onDetailLevelChange = chatbotConfigViewModel::onDetailLevelChange,
+                onAllowExternalSearchChange = chatbotConfigViewModel::onAllowExternalSearchChange,
                 onSaveConfig = chatbotConfigViewModel::guardarConfiguracion,
                 onDeleteApiKey = chatbotConfigViewModel::eliminarApiKey,
                 onConfirmGoogleAccount = {
@@ -205,6 +206,8 @@ fun AppNavigation() {
                 chatbotModeLabel = modeLabel,
                 onQuestionChange = chatbotViewModel::onQuestionChange,
                 onSendQuestion = chatbotViewModel::sendQuestion,
+                onConfirmExternalSearch = chatbotViewModel::confirmExternalSearch,
+                onCancelExternalSearch = chatbotViewModel::cancelExternalSearch,
                 onClearConversation = chatbotViewModel::clearConversation,
                 onOpenIncidentDetail = { id ->
                     navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id)) {

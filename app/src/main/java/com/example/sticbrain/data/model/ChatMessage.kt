@@ -10,5 +10,9 @@ data class ChatMessage(
     val relatedIncidents: List<ChatbotIncidentResult> = emptyList(),
     val usedExternalAi: Boolean = false,
     val confidence: String? = null,
-    val mainIncidentId: Long? = null
+    val mainIncidentId: Long? = null,
+    
+    // Nuevos campos para acciones pendientes
+    val requiresUserConfirmation: Boolean = false,
+    val pendingAction: ChatbotPendingAction? = null
 )

@@ -41,6 +41,8 @@ fun ChatbotScreen(
     chatbotModeLabel: String = "Modo local",
     onQuestionChange: (String) -> Unit,
     onSendQuestion: () -> Unit,
+    onConfirmExternalSearch: () -> Unit = {},
+    onCancelExternalSearch: () -> Unit = {},
     onClearConversation: () -> Unit,
     onOpenIncidentDetail: (Long) -> Unit,
     onNavigateToHome: () -> Unit = {},
@@ -125,7 +127,12 @@ fun ChatbotScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(messages) { message ->
-                            ChatBubble(message, onOpenIncidentDetail)
+                            ChatBubble(
+                                message = message, 
+                                onOpenDetail = onOpenIncidentDetail,
+                                onConfirmExternal = onConfirmExternalSearch,
+                                onCancelExternal = onCancelExternalSearch
+                            )
                         }
                         if (isLoading) {
                             item {
@@ -209,7 +216,9 @@ private fun WelcomeMessage() {
 @Composable
 private fun ChatBubble(
     message: ChatMessage,
-    onOpenDetail: (Long) -> Unit
+    onOpenDetail: (Long) -> Unit,
+    onConfirmExternal: () -> Unit,
+    onCancelExternal: () -> Unit
 ) {
     val alignment = if (message.isUser) Alignment.End else Alignment.Start
     val bgColor = if (message.isUser) SticBlue else SticSky
@@ -218,12 +227,33 @@ private fun ChatBubble(
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
         Surface(color = bgColor, shape = shape, modifier = Modifier.widthIn(max = 300.dp)) {
-            Text(
-                text = message.text,
-                color = txtColor,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                fontSize = 14.sp
-            )
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text(
+                    text = message.text,
+                    color = txtColor,
+                    fontSize = 14.sp
+                )
+
+                if (message.requiresUserConfirmation) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onConfirmExternal,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = SticBlue)
+                        ) {
+                            Text("Buscar información externa", fontSize = 12.sp)
+                        }
+                        OutlinedButton(
+                            onClick = onCancelExternal,
+                            modifier = Modifier.fillMaxWidth(),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SticBlue)
+                        ) {
+                            Text("Mantener solo local", fontSize = 12.sp, color = SticBlue)
+                        }
+                    }
+                }
+            }
         }
 
         if (!message.isUser) {

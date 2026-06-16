@@ -18,8 +18,6 @@ import java.util.concurrent.TimeUnit
  * 
  * Implementa una configuración de generación optimizada para diagnósticos técnicos
  * y construye prompts estructurados para forzar respuestas profesionales.
- * 
- * Ahora adapta el prompt según el estilo y nivel de detalle configurado.
  */
 class GeminiApiClient(
     private val apiKey: String,
@@ -33,7 +31,7 @@ class GeminiApiClient(
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * Realiza una petición de generación de contenido estructurado a Gemini.
+     * Realiza una petición de generación de contenido estructurado a Gemini con contexto local.
      */
     suspend fun generateContent(
         question: String, 
@@ -92,39 +90,110 @@ class GeminiApiClient(
                 $context
             """.trimIndent()
 
-            val requestBody = GeminiRequest(
-                contents = listOf(
-                    GeminiContent(
-                        parts = listOf(GeminiPart(text = prompt))
-                    )
-                ),
-                generationConfig = GeminiGenerationConfig(
-                    temperature = 0.2,
-                    topP = 0.8,
-                    maxOutputTokens = 2048
-                )
-            )
-
-            val bodyJson = json.encodeToString(requestBody)
-            val mediaType = "application/json; charset=utf-8".toMediaType()
-            val request = Request.Builder()
-                .url(url)
-                .post(bodyJson.toRequestBody(mediaType))
-                .build()
-
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string()
-
-            if (response.isSuccessful && responseBody != null) {
-                val geminiResponse = json.decodeFromString<GeminiResponse>(responseBody)
-                return@withContext geminiResponse.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-                    ?: "Gemini no devolvió una respuesta válida."
-            } else {
-                return@withContext "Error en la API de Gemini: ${response.code} ${response.message}"
-            }
+            return@withContext executeGeminiRequest(url, prompt)
         } catch (e: Exception) {
             e.printStackTrace()
             return@withContext "Error de conexión: ${e.localizedMessage}"
+        }
+    }
+
+    /**
+     * Realiza una petición a Gemini para búsqueda externa cuando no hay contexto local suficiente.
+     */
+    suspend fun generateExternalContent(
+        question: String,
+        options: ChatbotGenerationOptions
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+
+            val prompt = """
+                Eres el asistente técnico de Stic Brain.
+
+                La base de conocimiento local no contiene información suficiente para resolver la incidencia.
+                El usuario ha autorizado buscar una solución general usando Gemini.
+
+                Reglas obligatorias:
+                1. Responde siempre en español.
+                2. No afirmes que la solución procede de Stic Brain.
+                3. No inventes datos internos de la organización.
+                4. No uses credenciales, IPs, rutas internas ni procedimientos específicos si no han sido proporcionados.
+                5. Propón una guía general y segura para abordar la incidencia.
+                6. Indica claramente que debe validarse antes de aplicarse.
+                7. Recomienda crear una nueva ficha en Stic Brain si la solución se confirma.
+
+                Estilo de respuesta:
+                ${buildStyleInstruction(options.responseStyle)}
+
+                Nivel de detalle:
+                ${buildDetailInstruction(options.detailLevel)}
+
+                Formato obligatorio:
+
+                Respuesta generada con información externa mediante Gemini:
+                Esta información no procede de la base de conocimiento local de Stic Brain. Revísala antes de aplicarla.
+
+                Solución propuesta:
+                ...
+
+                Pasos recomendados:
+                1. ...
+                2. ...
+                3. ...
+
+                Comprobaciones previas:
+                - ...
+
+                Precauciones:
+                - ...
+
+                Nivel de confianza:
+                Baja / Media
+
+                Recomendación final:
+                Si esta solución es válida, crea una nueva ficha en Stic Brain para documentarla.
+
+                PREGUNTA DEL USUARIO:
+                $question
+            """.trimIndent()
+
+            return@withContext executeGeminiRequest(url, prompt)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext "Error de conexión: ${e.localizedMessage}"
+        }
+    }
+
+    private suspend fun executeGeminiRequest(url: String, prompt: String): String {
+        val requestBody = GeminiRequest(
+            contents = listOf(
+                GeminiContent(
+                    parts = listOf(GeminiPart(text = prompt))
+                )
+            ),
+            generationConfig = GeminiGenerationConfig(
+                temperature = 0.2,
+                topP = 0.8,
+                maxOutputTokens = 2048
+            )
+        )
+
+        val bodyJson = json.encodeToString(requestBody)
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val request = Request.Builder()
+            .url(url)
+            .post(bodyJson.toRequestBody(mediaType))
+            .build()
+
+        val response = client.newCall(request).execute()
+        val responseBody = response.body?.string()
+
+        if (response.isSuccessful && responseBody != null) {
+            val geminiResponse = json.decodeFromString<GeminiResponse>(responseBody)
+            return geminiResponse.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+                ?: "Gemini no devolvió una respuesta válida."
+        } else {
+            return "Error en la API de Gemini: ${response.code} ${response.message}"
         }
     }
 

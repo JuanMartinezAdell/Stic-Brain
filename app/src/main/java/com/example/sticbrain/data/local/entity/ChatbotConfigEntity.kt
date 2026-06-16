@@ -28,6 +28,9 @@ data class ChatbotConfigEntity(
     val maxContextIncidents: Int = 5,
     val responseStyle: String = "PROCEDIMIENTO_PASO_A_PASO",
     val detailLevel: String = "MEDIO",
+    
+    // Nueva opción para permitir búsqueda externa con confirmación
+    val allowExternalSearchWhenNoLocalInfo: Boolean = true,
 
     val lastUpdated: Long = System.currentTimeMillis()
 )

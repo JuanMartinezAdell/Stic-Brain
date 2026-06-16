@@ -43,6 +43,7 @@ class ChatbotConfigViewModel(
                             .getOrDefault(ChatbotResponseStyle.PROCEDIMIENTO_PASO_A_PASO),
                         detailLevel = runCatching { ChatbotDetailLevel.valueOf(config.detailLevel) }
                             .getOrDefault(ChatbotDetailLevel.MEDIO),
+                        allowExternalSearchWhenNoLocalInfo = config.allowExternalSearchWhenNoLocalInfo,
                         googleEmail = config.googleEmail,
                         googleDisplayName = config.googleDisplayName,
                         googleAccountConfirmed = config.googleAccountConfirmed
@@ -74,6 +75,10 @@ class ChatbotConfigViewModel(
 
     fun onDetailLevelChange(value: ChatbotDetailLevel) {
         _uiState.value = _uiState.value.copy(detailLevel = value)
+    }
+
+    fun onAllowExternalSearchChange(value: Boolean) {
+        _uiState.value = _uiState.value.copy(allowExternalSearchWhenNoLocalInfo = value)
     }
 
     fun onGoogleAccountConfirmed(email: String, displayName: String?) {
@@ -116,7 +121,8 @@ class ChatbotConfigViewModel(
                         hasGeminiApiKey = state.hasGeminiApiKey || state.geminiApiKeyInput.isNotBlank(),
                         maxContextIncidents = state.maxContextIncidents,
                         responseStyle = state.responseStyle.name,
-                        detailLevel = state.detailLevel.name
+                        detailLevel = state.detailLevel.name,
+                        allowExternalSearchWhenNoLocalInfo = state.allowExternalSearchWhenNoLocalInfo
                     )
                 )
 

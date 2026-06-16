@@ -4,12 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.chatbot.ChatbotEngine
 import com.example.sticbrain.data.chatbot.ChatbotGenerationOptions
+import com.example.sticbrain.data.chatbot.GeminiApiClient
 import com.example.sticbrain.data.chatbot.GeminiChatbotEngine
+import com.example.sticbrain.data.chatbot.GeminiExternalSearchEngine
 import com.example.sticbrain.data.chatbot.LocalChatbotEngine
 import com.example.sticbrain.data.local.entity.ChatMessageEntity
 import com.example.sticbrain.data.mapper.toChatMessage
 import com.example.sticbrain.data.model.ChatbotDetailLevel
 import com.example.sticbrain.data.model.ChatbotMode
+import com.example.sticbrain.data.model.ChatbotPendingAction
+import com.example.sticbrain.data.model.ChatbotPendingActionType
 import com.example.sticbrain.data.model.ChatbotResponseStyle
 import com.example.sticbrain.data.model.ChatMessage
 import com.example.sticbrain.data.repository.ChatbotConfigRepository
@@ -46,6 +50,10 @@ class ChatbotViewModel(
 
     private val _currentModeLabel = MutableStateFlow("Modo local")
     val currentModeLabel: StateFlow<String> = _currentModeLabel.asStateFlow()
+
+    // Acción pendiente que requiere confirmación del usuario
+    private val _pendingAction = MutableStateFlow<ChatbotPendingAction?>(null)
+    val pendingAction: StateFlow<ChatbotPendingAction?> = _pendingAction.asStateFlow()
 
     init {
         cargarHistorial()
@@ -162,6 +170,51 @@ class ChatbotViewModel(
             try {
                 val engineResult = engine.generateResponse(question, incidencias, options)
 
+                // Si no hay información suficiente, preparamos la acción pendiente
+                if (engineResult.needsExternalSearchConfirmation) {
+                    val pending = ChatbotPendingAction(
+                        type = ChatbotPendingActionType.CONFIRM_EXTERNAL_SEARCH,
+                        originalQuestion = question,
+                        localResultSummary = engineResult.answer
+                    )
+                    _pendingAction.value = pending
+
+                    val idsRelacionados = engineResult.relatedIncidents.map { it.incidenciaId }.joinToString(",").ifBlank { null }
+                    
+                    // Creamos el mensaje pero con el flag de confirmación (esto es temporal en memoria para la sesión)
+                    // Para que aparezca en la UI actual lo añadimos a la lista _messages directamente
+                    val botConfirmMessage = ChatMessage(
+                        text = engineResult.answer,
+                        isUser = false,
+                        relatedIncidents = engineResult.relatedIncidents.map {
+                            com.example.sticbrain.data.model.ChatbotIncidentResult(
+                                incidenciaId = it.incidenciaId,
+                                tituloNombre = it.tituloNombre,
+                                categoria = it.categoria,
+                                nivelPrioridad = it.nivelPrioridad,
+                                procedimientoResumen = it.procedimientoResumen,
+                                puntuacion = it.puntuacion
+                            )
+                        },
+                        confidence = engineResult.confidence,
+                        requiresUserConfirmation = true,
+                        pendingAction = pending
+                    )
+                    
+                    // Persistimos el mensaje sin los botones (o podríamos añadir lógica para no persistirlos)
+                    chatMessageRepository.insertarMensaje(
+                        ChatMessageEntity(
+                            text = engineResult.answer,
+                            isUser = false,
+                            relatedIncidentIds = idsRelacionados,
+                            confidence = engineResult.confidence
+                        )
+                    )
+                    
+                    _isLoading.value = false
+                    return@launch
+                }
+
                 val idsRelacionados = engineResult.relatedIncidents.map { it.incidenciaId }.joinToString(",").ifBlank { null }
                 
                 chatMessageRepository.insertarMensaje(
@@ -191,6 +244,98 @@ class ChatbotViewModel(
         viewModelScope.launch {
             chatMessageRepository.limpiarHistorial()
             _currentQuestion.value = ""
+            _pendingAction.value = null
+        }
+    }
+
+    /**
+     * Confirma la búsqueda de información externa mediante Gemini.
+     */
+    fun confirmExternalSearch() {
+        val action = _pendingAction.value ?: return
+        if (action.type != ChatbotPendingActionType.CONFIRM_EXTERNAL_SEARCH) return
+
+        _pendingAction.value = null
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            try {
+                // Notificar la decisión en el chat
+                chatMessageRepository.insertarMensaje(
+                    ChatMessageEntity(
+                        text = "Has autorizado la búsqueda de información externa mediante Gemini.",
+                        isUser = true
+                    )
+                )
+
+                val config = withContext(Dispatchers.IO) { chatbotConfigRepository.obtenerConfiguracionUnaVez() }
+                val apiKey = withContext(Dispatchers.IO) { chatbotConfigRepository.obtenerGeminiApiKey() }
+
+                if (apiKey.isNullOrBlank()) {
+                    chatMessageRepository.insertarMensaje(
+                        ChatMessageEntity(
+                            text = "Para buscar información externa necesitas configurar primero tu API key de Gemini en Ajustes > Configuración del chatbot.",
+                            isUser = false
+                        )
+                    )
+                    return@launch
+                }
+
+                val apiClient = GeminiApiClient(apiKey, config?.geminiModel ?: "gemini-1.5-flash")
+                val externalEngine = GeminiExternalSearchEngine(apiClient)
+
+                val options = if (config != null) {
+                    ChatbotGenerationOptions(
+                        maxContextIncidents = config.maxContextIncidents,
+                        responseStyle = ChatbotResponseStyle.valueOf(config.responseStyle),
+                        detailLevel = ChatbotDetailLevel.valueOf(config.detailLevel)
+                    )
+                } else {
+                    ChatbotGenerationOptions()
+                }
+
+                val result = externalEngine.generateExternalSolution(action.originalQuestion, options)
+
+                chatMessageRepository.insertarMensaje(
+                    ChatMessageEntity(
+                        text = result.answer,
+                        isUser = false,
+                        usedExternalAi = true,
+                        confidence = result.confidence
+                    )
+                )
+            } catch (e: Exception) {
+                chatMessageRepository.insertarMensaje(
+                    ChatMessageEntity(
+                        text = "Error al realizar la búsqueda externa: ${e.localizedMessage}",
+                        isUser = false
+                    )
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Cancela la búsqueda externa y mantiene el modo local.
+     */
+    fun cancelExternalSearch() {
+        _pendingAction.value = null
+        viewModelScope.launch {
+            chatMessageRepository.insertarMensaje(
+                ChatMessageEntity(
+                    text = "Has decidido mantener la consulta solo con información local.",
+                    isUser = true
+                )
+            )
+            
+            chatMessageRepository.insertarMensaje(
+                ChatMessageEntity(
+                    text = "De acuerdo. Mantendré la consulta dentro de la base de conocimiento local.\n\nPuedes probar con otras palabras clave o crear una nueva ficha para documentar esta incidencia.",
+                    isUser = false
+                )
+            )
         }
     }
 }

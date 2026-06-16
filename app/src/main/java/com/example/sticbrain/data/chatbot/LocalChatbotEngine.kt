@@ -9,6 +9,10 @@ import com.example.sticbrain.data.model.ChatbotResponseStyle
  */
 class LocalChatbotEngine : ChatbotEngine {
 
+    companion object {
+        private const val MIN_SCORE_FOR_RELIABLE_LOCAL_RESULT = 8
+    }
+
     override suspend fun generateResponse(
         question: String,
         incidencias: List<IncidenciaEntity>,
@@ -16,28 +20,44 @@ class LocalChatbotEngine : ChatbotEngine {
     ): ChatbotEngineResult {
         if (incidencias.isEmpty()) {
             return ChatbotEngineResult(
-                answer = "No hay fichas de conocimiento guardadas en la aplicación."
+                answer = "No hay fichas de conocimiento guardadas en la aplicación.",
+                hasEnoughLocalInformation = false,
+                needsExternalSearchConfirmation = true
             )
         }
 
         val resultados = rankIncidents(question, incidencias)
             .take(options.maxContextIncidents)
 
-        val answerText = buildLocalAnswer(resultados, options.responseStyle)
+        val bestScore = resultados.firstOrNull()?.puntuacion ?: 0
+        val hasEnoughInformation = resultados.isNotEmpty() && bestScore >= MIN_SCORE_FOR_RELIABLE_LOCAL_RESULT
 
-        return if (resultados.isNotEmpty()) {
-            ChatbotEngineResult(
-                answer = answerText,
+        if (!hasEnoughInformation) {
+            return ChatbotEngineResult(
+                answer = if (resultados.isEmpty()) {
+                    "No he encontrado información suficiente en la base de conocimiento local de Stic Brain para resolver esta incidencia.\n\n¿Quieres que intente buscar información externa con Gemini?"
+                } else {
+                    "He encontrado algunas fichas posiblemente relacionadas, pero la información no parece suficiente para resolver la incidencia con seguridad.\n\n¿Quieres que intente completar la solución usando información externa mediante Gemini?"
+                },
                 relatedIncidents = resultados,
                 usedExternalAi = false,
-                mainIncidentId = resultados.firstOrNull()?.incidenciaId
-            )
-        } else {
-            ChatbotEngineResult(
-                answer = "No he encontrado fichas relacionadas con tu consulta localmente.",
-                usedExternalAi = false
+                confidence = "Baja",
+                hasEnoughLocalInformation = false,
+                needsExternalSearchConfirmation = true
             )
         }
+
+        val answerText = buildLocalAnswer(resultados, options.responseStyle)
+
+        return ChatbotEngineResult(
+            answer = answerText,
+            relatedIncidents = resultados,
+            usedExternalAi = false,
+            confidence = if (bestScore > 15) "Alta" else "Media",
+            mainIncidentId = resultados.firstOrNull()?.incidenciaId,
+            hasEnoughLocalInformation = true,
+            needsExternalSearchConfirmation = false
+        )
     }
 
     /**

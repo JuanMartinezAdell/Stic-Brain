@@ -41,6 +41,7 @@ fun ChatbotSettingsScreen(
     onMaxContextIncidentsChange: (Int) -> Unit,
     onResponseStyleChange: (ChatbotResponseStyle) -> Unit,
     onDetailLevelChange: (ChatbotDetailLevel) -> Unit,
+    onAllowExternalSearchChange: (Boolean) -> Unit,
     onSaveConfig: () -> Unit,
     onDeleteApiKey: () -> Unit,
     onConfirmGoogleAccount: () -> Unit,
@@ -180,6 +181,20 @@ fun ChatbotSettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = uiState.detailLevel == level, onClick = { onDetailLevelChange(level) })
                             Text(text = level.toReadableText(), fontSize = 13.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Opción: Permitir búsqueda externa
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = uiState.allowExternalSearchWhenNoLocalInfo,
+                            onCheckedChange = onAllowExternalSearchChange
+                        )
+                        Column {
+                            Text(text = "Permitir búsqueda externa", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text(text = "Preguntar si buscar fuera si no hay datos locales.", fontSize = 11.sp, color = SticTextSecondary)
                         }
                     }
                 }
