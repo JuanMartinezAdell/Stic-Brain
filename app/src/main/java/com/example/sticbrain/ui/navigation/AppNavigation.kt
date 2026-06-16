@@ -21,6 +21,7 @@ import com.example.sticbrain.data.repository.ChatbotConfigRepository
 import com.example.sticbrain.data.repository.ChatMessageRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import com.example.sticbrain.data.repository.ProveedorRepository
+import com.example.sticbrain.data.security.SecureApiKeyStorage
 import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.screens.*
 import com.example.sticbrain.viewmodel.*
@@ -65,7 +66,11 @@ fun AppNavigation() {
     )
 
     val chatMessageRepository = ChatMessageRepository(database.chatMessageDao())
-    val chatbotConfigRepository = ChatbotConfigRepository(database.chatbotConfigDao())
+    val secureApiKeyStorage = SecureApiKeyStorage(context)
+    val chatbotConfigRepository = ChatbotConfigRepository(
+        chatbotConfigDao = database.chatbotConfigDao(),
+        secureApiKeyStorage = secureApiKeyStorage
+    )
     
     val chatbotViewModel: ChatbotViewModel = viewModel(
         factory = ChatbotViewModelFactory(incidenciaRepository, chatMessageRepository, chatbotConfigRepository)
@@ -164,6 +169,9 @@ fun AppNavigation() {
                 onModeChange = chatbotConfigViewModel::onModeChange,
                 onApiKeyChange = chatbotConfigViewModel::onApiKeyChange,
                 onModelChange = chatbotConfigViewModel::onModelChange,
+                onMaxContextIncidentsChange = chatbotConfigViewModel::onMaxContextIncidentsChange,
+                onResponseStyleChange = chatbotConfigViewModel::onResponseStyleChange,
+                onDetailLevelChange = chatbotConfigViewModel::onDetailLevelChange,
                 onSaveConfig = chatbotConfigViewModel::guardarConfiguracion,
                 onDeleteApiKey = chatbotConfigViewModel::eliminarApiKey,
                 onConfirmGoogleAccount = {

@@ -3,11 +3,14 @@ package com.example.sticbrain.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.sticbrain.data.chatbot.ChatbotEngine
+import com.example.sticbrain.data.chatbot.ChatbotGenerationOptions
 import com.example.sticbrain.data.chatbot.GeminiChatbotEngine
 import com.example.sticbrain.data.chatbot.LocalChatbotEngine
 import com.example.sticbrain.data.local.entity.ChatMessageEntity
 import com.example.sticbrain.data.mapper.toChatMessage
+import com.example.sticbrain.data.model.ChatbotDetailLevel
 import com.example.sticbrain.data.model.ChatbotMode
+import com.example.sticbrain.data.model.ChatbotResponseStyle
 import com.example.sticbrain.data.model.ChatMessage
 import com.example.sticbrain.data.repository.ChatbotConfigRepository
 import com.example.sticbrain.data.repository.ChatMessageRepository
@@ -23,7 +26,8 @@ import kotlinx.coroutines.withContext
 /**
  * ViewModel del Chatbot de Stic Brain.
  * 
- * Ahora decide qué motor de IA usar (Local o Gemini) basándose en la configuración.
+ * Ahora gestiona respuestas estructuradas, niveles de confianza y distinción
+ * entre ficha principal y alternativas.
  */
 class ChatbotViewModel(
     private val incidenciaRepository: IncidenciaRepository,
@@ -41,7 +45,6 @@ class ChatbotViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _currentModeLabel = MutableStateFlow("Modo local")
-    /** Etiqueta que indica el modo actual para mostrar en la UI. */
     val currentModeLabel: StateFlow<String> = _currentModeLabel.asStateFlow()
 
     init {
@@ -72,7 +75,18 @@ class ChatbotViewModel(
                 if (!entidad.isUser && !entidad.relatedIncidentIds.isNullOrBlank()) {
                     val ids = entidad.relatedIncidentIds.split(",").mapNotNull { it.toLongOrNull() }
                     val fichas = incidenciaRepository.obtenerIncidenciasPorIds(ids)
-                    val resultados = fichas.map { it.toChatbotIncidentResult(0) }
+                    
+                    // Mapeamos las fichas recuperadas a resultados de UI
+                    val resultados = fichas.map { ficha ->
+                        com.example.sticbrain.data.model.ChatbotIncidentResult(
+                            incidenciaId = ficha.id,
+                            tituloNombre = ficha.tituloNombre,
+                            categoria = ficha.categoria,
+                            nivelPrioridad = ficha.nivelPrioridad,
+                            procedimientoResumen = if (ficha.procedimientoRespuesta.length > 150) ficha.procedimientoRespuesta.take(150) + "..." else ficha.procedimientoRespuesta,
+                            puntuacion = 0 // La puntuación no se persiste
+                        )
+                    }
                     mensajeUi.copy(relatedIncidents = resultados)
                 } else {
                     mensajeUi
@@ -85,9 +99,6 @@ class ChatbotViewModel(
         _currentQuestion.value = value
     }
 
-    /**
-     * Envía la pregunta seleccionando el motor adecuado según la configuración.
-     */
     fun sendQuestion() {
         val question = _currentQuestion.value.trim()
         if (question.isBlank()) return
@@ -96,16 +107,17 @@ class ChatbotViewModel(
         _isLoading.value = true
 
         viewModelScope.launch {
-            // 1. Guardar mensaje del usuario
+            // Guardar pregunta del usuario
             chatMessageRepository.insertarMensaje(ChatMessageEntity(text = question, isUser = true))
 
-            // 2. Obtener configuración y seleccionar motor
             val config = withContext(Dispatchers.IO) {
                 chatbotConfigRepository.obtenerConfiguracionUnaVez()
             }
             
             val engine: ChatbotEngine = if (config?.mode == ChatbotMode.GEMINI.name) {
-                if (config.geminiApiKey.isNullOrBlank()) {
+                val apiKey = withContext(Dispatchers.IO) { chatbotConfigRepository.obtenerGeminiApiKey() }
+                
+                if (apiKey.isNullOrBlank()) {
                     chatMessageRepository.insertarMensaje(
                         ChatMessageEntity(
                             text = "Has seleccionado el modo Gemini, pero no hay una API key configurada. Ve a Ajustes > Configuración del chatbot.",
@@ -127,30 +139,49 @@ class ChatbotViewModel(
                     return@launch
                 }
 
-                GeminiChatbotEngine(apiKey = config.geminiApiKey, model = config.geminiModel)
+                GeminiChatbotEngine(
+                    apiKey = apiKey, 
+                    model = config.geminiModel
+                )
             } else {
                 LocalChatbotEngine()
             }
 
-            // 3. Generar respuesta
-            val incidencias = withContext(Dispatchers.IO) { incidenciaRepository.obtenerIncidenciasUnaVez() }
-            val engineResult = engine.generateResponse(question, incidencias)
-
-            // 4. Guardar respuesta del bot
-            val idsRelacionados = engineResult.relatedIncidents.map { it.incidenciaId }.joinToString(",").ifBlank { null }
-            val finalAnswer = if (engineResult.usedExternalAi) {
-                "${engineResult.answer}\n\n[Respuesta generada con Gemini usando el contexto de Stic Brain]"
+            val options = if (config != null) {
+                ChatbotGenerationOptions(
+                    maxContextIncidents = config.maxContextIncidents,
+                    responseStyle = ChatbotResponseStyle.valueOf(config.responseStyle),
+                    detailLevel = ChatbotDetailLevel.valueOf(config.detailLevel)
+                )
             } else {
-                "${engineResult.answer}\n\n[Respuesta generada en modo local usando Room]"
+                ChatbotGenerationOptions()
             }
 
-            chatMessageRepository.insertarMensaje(
-                ChatMessageEntity(
-                    text = finalAnswer,
-                    isUser = false,
-                    relatedIncidentIds = idsRelacionados
+            val incidencias = withContext(Dispatchers.IO) { incidenciaRepository.obtenerIncidenciasUnaVez() }
+            
+            try {
+                val engineResult = engine.generateResponse(question, incidencias, options)
+
+                val idsRelacionados = engineResult.relatedIncidents.map { it.incidenciaId }.joinToString(",").ifBlank { null }
+                
+                chatMessageRepository.insertarMensaje(
+                    ChatMessageEntity(
+                        text = engineResult.answer,
+                        isUser = false,
+                        relatedIncidentIds = idsRelacionados,
+                        usedExternalAi = engineResult.usedExternalAi,
+                        confidence = engineResult.confidence,
+                        mainIncidentId = engineResult.mainIncidentId
+                    )
                 )
-            )
+            } catch (e: Exception) {
+                chatMessageRepository.insertarMensaje(
+                    ChatMessageEntity(
+                        text = "Error al procesar la respuesta: ${e.localizedMessage}",
+                        isUser = false
+                    )
+                )
+            }
 
             _isLoading.value = false
         }
@@ -162,15 +193,4 @@ class ChatbotViewModel(
             _currentQuestion.value = ""
         }
     }
-
-    // Función auxiliar para el mapeo que se usaba antes
-    private fun com.example.sticbrain.data.local.entity.IncidenciaEntity.toChatbotIncidentResult(puntuacion: Int) =
-        com.example.sticbrain.data.model.ChatbotIncidentResult(
-            incidenciaId = id,
-            tituloNombre = tituloNombre,
-            categoria = categoria,
-            nivelPrioridad = nivelPrioridad,
-            procedimientoResumen = if (procedimientoRespuesta.length > 150) procedimientoRespuesta.take(150) + "..." else procedimientoRespuesta,
-            puntuacion = puntuacion
-        )
 }

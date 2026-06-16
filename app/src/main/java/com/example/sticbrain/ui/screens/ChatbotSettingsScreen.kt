@@ -5,28 +5,32 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.sticbrain.data.model.ChatbotConfigUiState
-import com.example.sticbrain.data.model.ChatbotMode
+import com.example.sticbrain.data.model.*
 import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.theme.*
 
 /**
- * Pantalla de configuración del chatbot.
+ * Pantalla de configuración avanzada del chatbot.
  * 
- * Permite alternar entre modo local y Gemini, y gestionar la API key.
+ * Permite ajustar el comportamiento de la IA, el estilo de respuesta 
+ * y el volumen de información procesada.
  */
 @Composable
 fun ChatbotSettingsScreen(
@@ -34,6 +38,9 @@ fun ChatbotSettingsScreen(
     onModeChange: (ChatbotMode) -> Unit,
     onApiKeyChange: (String) -> Unit,
     onModelChange: (String) -> Unit,
+    onMaxContextIncidentsChange: (Int) -> Unit,
+    onResponseStyleChange: (ChatbotResponseStyle) -> Unit,
+    onDetailLevelChange: (ChatbotDetailLevel) -> Unit,
     onSaveConfig: () -> Unit,
     onDeleteApiKey: () -> Unit,
     onConfirmGoogleAccount: () -> Unit,
@@ -49,7 +56,7 @@ fun ChatbotSettingsScreen(
         topBar = {
             SticTopHeader(
                 title = "IA y Configuración",
-                subtitle = "Gestiona el motor del chatbot",
+                subtitle = "Optimización del asistente",
                 showBackButton = true,
                 onBackClick = onNavigateBack
             )
@@ -72,186 +79,129 @@ fun ChatbotSettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Sección de modo de funcionamiento
+            // SECCIÓN: MODO DE FUNCIONAMIENTO
             SticCard {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "Modo de funcionamiento",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = SticBlue,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "Modo de funcionamiento", style = MaterialTheme.typography.titleMedium, color = SticBlue, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = uiState.mode == ChatbotMode.LOCAL,
-                            onClick = { onModeChange(ChatbotMode.LOCAL) }
-                        )
-                        Text("Modo Local (Sin Internet)", fontSize = 14.sp)
+                        RadioButton(selected = uiState.mode == ChatbotMode.LOCAL, onClick = { onModeChange(ChatbotMode.LOCAL) })
+                        Text("Modo Local (Búsqueda en Room)", fontSize = 14.sp)
                     }
-                    Text(
-                        text = "Busca únicamente en las fichas guardadas localmente.",
-                        fontSize = 12.sp,
-                        color = SticTextSecondary,
-                        modifier = Modifier.padding(start = 48.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(
-                            selected = uiState.mode == ChatbotMode.GEMINI,
-                            onClick = { onModeChange(ChatbotMode.GEMINI) }
-                        )
-                        Text("Modo Gemini (Requiere API Key)", fontSize = 14.sp)
+                        RadioButton(selected = uiState.mode == ChatbotMode.GEMINI, onClick = { onModeChange(ChatbotMode.GEMINI) })
+                        Text("Modo Gemini (Diagnóstico con IA)", fontSize = 14.sp)
                     }
-                    Text(
-                        text = "Usa IA generativa para dar respuestas más completas basadas en tus fichas.",
-                        fontSize = 12.sp,
-                        color = SticTextSecondary,
-                        modifier = Modifier.padding(start = 48.dp)
-                    )
                 }
             }
 
-            // Sección de Cuenta Google
+            // SECCIÓN: IDENTIDAD
             SticCard {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        text = "Identidad de Google",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = SticBlue,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "Identidad de Google", style = MaterialTheme.typography.titleMedium, color = SticBlue, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    
                     if (uiState.googleAccountConfirmed) {
-                        Text("Cuenta confirmada:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Text(uiState.googleEmail ?: "", fontSize = 14.sp, color = SticBlue)
-                        if (uiState.googleDisplayName != null) {
-                            Text(uiState.googleDisplayName, fontSize = 12.sp, color = SticTextSecondary)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextButton(
-                            onClick = onRemoveGoogleAccount,
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Quitar cuenta confirmada")
+                        Text("Cuenta: ${uiState.googleEmail}", fontSize = 14.sp, color = SticBlue)
+                        TextButton(onClick = onRemoveGoogleAccount, colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)) {
+                            Text("Quitar vinculación")
                         }
                     } else {
-                        Text(
-                            "Debes confirmar tu identidad con una cuenta de Google para habilitar las funciones de IA externa.",
-                            fontSize = 13.sp,
-                            color = SticTextPrimary
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = onConfirmGoogleAccount,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = SticSky),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
+                        Button(onClick = onConfirmGoogleAccount, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = SticSky)) {
                             Text("Confirmar con Google", color = SticBlue)
                         }
                     }
                 }
             }
 
-            // Sección de API Key (Solo si Gemini está seleccionado o hay una clave)
-            if (uiState.mode == ChatbotMode.GEMINI) {
-                SticCard {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = "Configuración de Gemini",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SticBlue,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
+            // SECCIÓN: AJUSTES DE GENERACIÓN (Solo Gemini o avanzado)
+            SticCard {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(text = "Ajustes del Asistente", style = MaterialTheme.typography.titleMedium, color = SticBlue, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(12.dp))
 
+                    if (uiState.mode == ChatbotMode.GEMINI) {
                         OutlinedTextField(
-                            value = uiState.geminiApiKey,
+                            value = uiState.geminiApiKeyInput,
                             onValueChange = onApiKeyChange,
-                            label = { Text("Gemini API Key") },
+                            label = { Text("API Key") },
+                            placeholder = { Text(if (uiState.hasGeminiApiKey) "Clave configurada" else "Introduce clave") },
                             modifier = Modifier.fillMaxWidth(),
                             visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
                             trailingIcon = {
                                 IconButton(onClick = { showApiKey = !showApiKey }) {
-                                    Icon(
-                                        imageVector = if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = null
-                                    )
+                                    Icon(imageVector = if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility, contentDescription = null)
                                 }
                             },
-                            singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
                         Spacer(modifier = Modifier.height(12.dp))
-                        
                         OutlinedTextField(
                             value = uiState.geminiModel,
                             onValueChange = onModelChange,
-                            label = { Text("Modelo (ej: gemini-pro)") },
+                            label = { Text("Modelo (ej: gemini-1.5-flash)") },
                             modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
                         Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = "Aviso: La clave se guarda localmente en el dispositivo. No compartas tu API key con nadie.",
-                            fontSize = 11.sp,
-                            color = SticTextSecondary,
-                            fontWeight = FontWeight.Light
-                        )
+                    }
+
+                    // Opción: Número de fichas de contexto
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Tune, contentDescription = null, tint = SticBlue, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Fichas de contexto: ${uiState.maxContextIncidents}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    }
+                    Slider(
+                        value = uiState.maxContextIncidents.toFloat(),
+                        onValueChange = { onMaxContextIncidentsChange(it.toInt()) },
+                        valueRange = 3f..8f,
+                        steps = 2, // Para que elija 3, 5 u 8
+                        colors = SliderDefaults.colors(thumbColor = SticBlue, activeTrackColor = SticBlue)
+                    )
+                    Text(text = "3: Rápido | 5: Equilibrado | 8: Análisis profundo", fontSize = 11.sp, color = SticTextSecondary)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Opción: Estilo de respuesta
+                    Text(text = "Estilo de respuesta", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    ChatbotResponseStyle.entries.forEach { style ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = uiState.responseStyle == style, onClick = { onResponseStyleChange(style) })
+                            Text(text = style.toReadableText(), fontSize = 13.sp)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Opción: Nivel de detalle
+                    Text(text = "Nivel de detalle", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    ChatbotDetailLevel.entries.forEach { level ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = uiState.detailLevel == level, onClick = { onDetailLevelChange(level) })
+                            Text(text = level.toReadableText(), fontSize = 13.sp)
+                        }
                     }
                 }
             }
 
-            // Mensajes de éxito o error
-            if (uiState.message != null) {
-                Text(uiState.message, color = SticBlue, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            }
-            if (uiState.error != null) {
-                Text(uiState.error, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
-            }
+            if (uiState.message != null) Text(uiState.message, color = SticBlue, fontSize = 13.sp)
+            if (uiState.error != null) Text(uiState.error, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
 
-            // Botones de acción
-            Button(
-                onClick = onSaveConfig,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = SticBlue),
-                shape = RoundedCornerShape(12.dp),
-                enabled = !uiState.isSaving
-            ) {
+            Button(onClick = onSaveConfig, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = SticBlue), shape = RoundedCornerShape(12.dp), enabled = !uiState.isSaving) {
                 Icon(Icons.Default.Save, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Guardar Configuración")
+                Text("Guardar Cambios")
             }
 
-            if (uiState.geminiApiKey.isNotEmpty()) {
-                TextButton(
-                    onClick = onDeleteApiKey,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Eliminar API Key y volver a Modo Local")
+            if (uiState.hasGeminiApiKey) {
+                TextButton(onClick = onDeleteApiKey, modifier = Modifier.align(Alignment.CenterHorizontally), colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)) {
+                    Text("Borrar API Key")
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = onNavigateToChatbot,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = SticSky),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Ir al Chatbot", color = SticBlue)
+            Button(onClick = onNavigateToChatbot, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = SticSky), shape = RoundedCornerShape(12.dp)) {
+                Text("Probar Chatbot", color = SticBlue)
             }
         }
     }

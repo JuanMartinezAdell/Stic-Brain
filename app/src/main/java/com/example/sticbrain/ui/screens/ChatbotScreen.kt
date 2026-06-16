@@ -7,16 +7,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,14 +31,14 @@ import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.theme.*
 
 /**
- * Pantalla del Chatbot de conocimiento con persistencia e historial.
+ * Pantalla del Chatbot de conocimiento con persistencia e IA mejorada.
  */
 @Composable
 fun ChatbotScreen(
     messages: List<ChatMessage>,
     currentQuestion: String,
     isLoading: Boolean,
-    chatbotModeLabel: String = "Modo local", // Añadido para mostrar el modo
+    chatbotModeLabel: String = "Modo local",
     onQuestionChange: (String) -> Unit,
     onSendQuestion: () -> Unit,
     onClearConversation: () -> Unit,
@@ -47,14 +52,12 @@ fun ChatbotScreen(
     val listState = rememberLazyListState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Hacer scroll automático al último mensaje cuando cambia la lista
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
     }
 
-    // Diálogo de confirmación para borrar el historial
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -111,7 +114,6 @@ fun ChatbotScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            // Área de conversación
             Box(modifier = Modifier.weight(1f)) {
                 if (messages.isEmpty()) {
                     WelcomeMessage()
@@ -134,7 +136,6 @@ fun ChatbotScreen(
                 }
             }
 
-            // Barra de entrada de texto
             Surface(
                 color = SticWhite,
                 tonalElevation = 8.dp,
@@ -151,7 +152,7 @@ fun ChatbotScreen(
                         value = currentQuestion,
                         onValueChange = onQuestionChange,
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("¿En qué puedo ayudarte?", fontSize = 14.sp) },
+                        placeholder = { Text("Pregunta sobre un procedimiento...", fontSize = 14.sp) },
                         shape = RoundedCornerShape(24.dp),
                         maxLines = 3,
                         enabled = !isLoading,
@@ -176,78 +177,47 @@ fun ChatbotScreen(
     }
 }
 
-/** Componente de bienvenida con ejemplos de uso. */
 @Composable
 private fun WelcomeMessage() {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         SticCard {
             Column(modifier = Modifier.padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Chat, contentDescription = null, tint = SticBlue, modifier = Modifier.size(24.dp))
+                    Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, tint = SticBlue, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Soy el asistente de Stic Brain",
-                        color = SticBlue,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    Text(text = "Asistente de Stic Brain", color = SticBlue, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Busco fichas técnicas relacionadas con tu pregunta y te muestro los mejores resultados.",
+                    text = "Puedo analizar varias fichas de conocimiento y proponerte la solución más probable.",
                     color = SticTextPrimary,
                     fontSize = 14.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Prueba a preguntarme:",
-                    color = SticTextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Ejemplos:", color = SticTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Text(text = "• ¿Qué revisar si no hay red?", fontSize = 13.sp, color = SticTextSecondary)
                 Text(text = "• Problemas con la impresora", fontSize = 13.sp, color = SticTextSecondary)
-                Text(text = "• El usuario no puede entrar", fontSize = 13.sp, color = SticTextSecondary)
             }
         }
     }
 }
 
-/** 
- * Burbuja de chat. Si el mensaje es del bot y tiene resultados, 
- * los muestra debajo del texto.
- */
 @Composable
 private fun ChatBubble(
     message: ChatMessage,
     onOpenDetail: (Long) -> Unit
 ) {
-    val alignment = if (message.isUser) Alignment.CenterEnd else Alignment.CenterStart
+    val alignment = if (message.isUser) Alignment.End else Alignment.Start
     val bgColor = if (message.isUser) SticBlue else SticSky
     val txtColor = if (message.isUser) SticWhite else SticTextPrimary
-    val shape = if (message.isUser) {
-        RoundedCornerShape(16.dp, 16.dp, 0.dp, 16.dp)
-    } else {
-        RoundedCornerShape(16.dp, 16.dp, 16.dp, 0.dp)
-    }
+    val shape = if (message.isUser) RoundedCornerShape(16.dp, 16.dp, 0.dp, 16.dp) else RoundedCornerShape(16.dp, 16.dp, 16.dp, 0.dp)
 
-    val colAlignment = if (message.isUser) Alignment.End else Alignment.Start
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = colAlignment
-    ) {
-        Surface(
-            color = bgColor,
-            shape = shape,
-            modifier = Modifier.widthIn(max = 300.dp)
-        ) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
+        Surface(color = bgColor, shape = shape, modifier = Modifier.widthIn(max = 300.dp)) {
             Text(
                 text = message.text,
                 color = txtColor,
@@ -256,39 +226,93 @@ private fun ChatBubble(
             )
         }
 
-        // Si hay resultados de fichas, se muestran como una lista de tarjetas
-        if (!message.isUser && message.relatedIncidents.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            message.relatedIncidents.forEach { result ->
-                ChatbotIncidentResultCard(result, onOpenDetail)
-                Spacer(modifier = Modifier.height(8.dp))
+        if (!message.isUser) {
+            ChatbotResponseMetadata(message)
+
+            if (message.relatedIncidents.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = if (message.mainIncidentId != null) "Ficha recomendada:" else "Fichas relacionadas:",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = SticTextSecondary,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+                
+                // Mostrar la ficha principal destacada si existe
+                val mainIncident = message.relatedIncidents.find { it.incidenciaId == message.mainIncidentId }
+                val otherIncidents = message.relatedIncidents.filter { it.incidenciaId != message.mainIncidentId }
+
+                if (mainIncident != null) {
+                    ChatbotIncidentResultCard(mainIncident, onOpenDetail, isMain = true)
+                    if (otherIncidents.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "Otras alternativas:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SticTextSecondary, modifier = Modifier.padding(start = 4.dp))
+                    }
+                }
+
+                otherIncidents.forEach { result ->
+                    Spacer(modifier = Modifier.height(4.dp))
+                    ChatbotIncidentResultCard(result, onOpenDetail)
+                }
             }
         }
     }
 }
 
-/** 
- * Tarjeta individual que representa una ficha técnica encontrada.
- */
+@Composable
+private fun ChatbotResponseMetadata(message: ChatMessage) {
+    Column(modifier = Modifier.padding(top = 4.dp, start = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val icon = if (message.usedExternalAi) Icons.Default.Shield else Icons.Default.Info
+            Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp), tint = SticTextSecondary)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = if (message.usedExternalAi) "Generado con Gemini" else "Modo local",
+                fontSize = 10.sp,
+                color = SticTextSecondary,
+                fontStyle = FontStyle.Italic
+            )
+        }
+        
+        if (message.confidence != null) {
+            val confidenceColor = when(message.confidence) {
+                "Alta" -> Color(0xFF2E7D32)
+                "Media" -> Color(0xFFF57C00)
+                else -> Color(0xFFC62828)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
+                Icon(Icons.Default.Stars, contentDescription = null, modifier = Modifier.size(12.dp), tint = confidenceColor)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Confianza: ${message.confidence}",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = confidenceColor
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun ChatbotIncidentResultCard(
     result: ChatbotIncidentResult,
-    onOpenIncidentDetail: (Long) -> Unit
+    onOpenIncidentDetail: (Long) -> Unit,
+    isMain: Boolean = false
 ) {
     Card(
-        modifier = Modifier
-            .width(300.dp)
-            .padding(start = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = SticWhite),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SticSky)
+        modifier = Modifier.width(300.dp).padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isMain) Color(0xFFF0F7FF) else SticWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isMain) 4.dp else 1.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isMain) SticBlue else SticSky)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isMain) {
+                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = SticBlue, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
                 Text(
                     text = result.tituloNombre,
                     style = MaterialTheme.typography.titleSmall,
@@ -296,63 +320,39 @@ fun ChatbotIncidentResultCard(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                Surface(
-                    color = SticBlue.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
-                    Text(
-                        text = "Rel: ${result.puntuacion}",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        fontSize = 10.sp,
-                        color = SticBlue
-                    )
-                }
+            }
+            
+            if (!result.motivoCoincidencia.isNullOrBlank()) {
+                Text(text = "Motivo: ${result.motivoCoincidencia}", fontSize = 10.sp, color = SticTextSecondary, fontStyle = FontStyle.Italic)
             }
             
             Spacer(modifier = Modifier.height(4.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row {
                 Text(text = result.categoria, fontSize = 11.sp, color = SticTextSecondary)
                 Text(text = " • ", fontSize = 11.sp, color = SticTextSecondary)
                 Text(text = result.nivelPrioridad, fontSize = 11.sp, color = if (result.nivelPrioridad == "Urgente") Color.Red else SticTextSecondary)
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = result.procedimientoResumen,
-                style = MaterialTheme.typography.bodySmall,
-                color = SticTextPrimary,
-                maxLines = 3
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = result.procedimientoResumen, style = MaterialTheme.typography.bodySmall, color = SticTextPrimary, maxLines = 2)
             
             TextButton(
                 onClick = { onOpenIncidentDetail(result.incidenciaId) },
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.height(32.dp)
+                modifier = Modifier.height(32.dp).align(Alignment.End)
             ) {
-                Text("Ver detalle completo", fontSize = 12.sp, color = SticBlue)
+                Text("Ver detalle", fontSize = 12.sp, color = SticBlue)
                 Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp))
             }
         }
     }
 }
 
-/** Indicador visual de espera. */
 @Composable
 private fun TypingIndicator() {
-    Row(
-        modifier = Modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.size(16.dp),
-            color = SticBlue,
-            strokeWidth = 2.dp
-        )
+    Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = SticBlue, strokeWidth = 2.dp)
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "Analizando base de conocimiento...", color = SticTextSecondary, fontSize = 12.sp)
+        Text(text = "Gemini está analizando las fichas...", color = SticTextSecondary, fontSize = 12.sp)
     }
 }

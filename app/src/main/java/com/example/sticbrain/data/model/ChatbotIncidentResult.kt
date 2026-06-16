@@ -12,5 +12,6 @@ data class ChatbotIncidentResult(
     val categoria: String,
     val nivelPrioridad: String,
     val procedimientoResumen: String,
-    val puntuacion: Int
+    val puntuacion: Int,
+    val motivoCoincidencia: String? = null
 )

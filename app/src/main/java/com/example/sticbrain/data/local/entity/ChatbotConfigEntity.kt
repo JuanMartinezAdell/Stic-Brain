@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 
 /**
  * Entidad que almacena la configuración del chatbot.
- *
- * Incluye el modo de funcionamiento, la API key de Gemini y la información
- * de la cuenta Google confirmada por el usuario.
+ * 
+ * Contiene tanto los ajustes de identidad como las preferencias de generación
+ * de respuestas para Gemini y el modo local.
  */
 @Entity(tableName = "chatbot_config")
 data class ChatbotConfigEntity(
@@ -16,14 +16,18 @@ data class ChatbotConfigEntity(
 
     val mode: String = "LOCAL",
 
-    val geminiApiKey: String? = null,
-
     val geminiModel: String = "gemini-1.5-flash",
 
-    // Campos para la confirmación con cuenta Google
     val googleEmail: String? = null,
     val googleDisplayName: String? = null,
     val googleAccountConfirmed: Boolean = false,
+
+    val hasGeminiApiKey: Boolean = false,
+    
+    // Configuración avanzada de la IA
+    val maxContextIncidents: Int = 5,
+    val responseStyle: String = "PROCEDIMIENTO_PASO_A_PASO",
+    val detailLevel: String = "MEDIO",
 
     val lastUpdated: Long = System.currentTimeMillis()
 )

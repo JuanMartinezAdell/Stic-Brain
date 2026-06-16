@@ -4,17 +4,17 @@ import com.example.sticbrain.data.local.entity.ChatMessageEntity
 import com.example.sticbrain.data.model.ChatMessage
 
 /**
- * Convierte una entidad de Room en un mensaje que puede mostrar la interfaz.
- *
- * El campo relatedIncidents se deja vacío inicialmente; el ViewModel se
- * encargará de reconstruirlo si existen IDs relacionados.
+ * Convierte una entidad de Room en un mensaje de la interfaz.
  */
 fun ChatMessageEntity.toChatMessage(): ChatMessage {
     return ChatMessage(
         id = id,
         text = text,
         isUser = isUser,
-        relatedIncidents = emptyList()
+        relatedIncidents = emptyList(),
+        usedExternalAi = usedExternalAi,
+        confidence = confidence,
+        mainIncidentId = mainIncidentId
     )
 }
 
@@ -28,9 +28,12 @@ fun ChatMessage.toEntity(): ChatMessageEntity {
         .ifBlank { null }
 
     return ChatMessageEntity(
-        id = 0, // Room generará el ID
+        id = 0,
         text = text,
         isUser = isUser,
-        relatedIncidentIds = idsRelacionados
+        relatedIncidentIds = idsRelacionados,
+        usedExternalAi = usedExternalAi,
+        confidence = confidence,
+        mainIncidentId = mainIncidentId
     )
 }

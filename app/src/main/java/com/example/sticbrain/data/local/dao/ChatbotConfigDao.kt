@@ -32,10 +32,16 @@ interface ChatbotConfigDao {
     suspend fun guardarConfiguracion(config: ChatbotConfigEntity)
 
     /**
-     * Elimina la API key guardada, manteniendo el modo local por seguridad.
+     * Actualiza el estado de la API key en Room.
      */
-    @Query("UPDATE chatbot_config SET geminiApiKey = NULL, mode = 'LOCAL', lastUpdated = :timestamp WHERE id = 1")
-    suspend fun eliminarApiKey(timestamp: Long = System.currentTimeMillis())
+    @Query("UPDATE chatbot_config SET hasGeminiApiKey = :hasKey, lastUpdated = :timestamp WHERE id = 1")
+    suspend fun actualizarEstadoApiKey(hasKey: Boolean, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Marca la API key como eliminada y vuelve al modo local.
+     */
+    @Query("UPDATE chatbot_config SET hasGeminiApiKey = 0, mode = 'LOCAL', lastUpdated = :timestamp WHERE id = 1")
+    suspend fun marcarApiKeyEliminada(timestamp: Long = System.currentTimeMillis())
 
     /**
      * Guarda la información de la cuenta Google confirmada.
