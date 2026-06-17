@@ -63,4 +63,16 @@ interface IncidenciaDao {
     fun filtrarPorPrioridad(prioridad: String): Flow<List<IncidenciaEntity>>
     @Query("SELECT * FROM incidencias WHERE id IN (:ids)")
     suspend fun obtenerIncidenciasPorIds(ids: List<Long>): List<IncidenciaEntity>
+
+    /**
+     * Marca una ficha como revisada por el usuario.
+     */
+    @Query("""
+        UPDATE incidencias 
+        SET revisada = 1, 
+            esProvisional = 0, 
+            fechaModificacion = :timestamp 
+        WHERE id = :id
+    """)
+    suspend fun marcarComoRevisada(id: Long, timestamp: Long = System.currentTimeMillis())
 }

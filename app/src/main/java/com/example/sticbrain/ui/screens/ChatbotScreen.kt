@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Info
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.model.ChatbotIncidentResult
 import com.example.sticbrain.data.model.ChatMessage
+import com.example.sticbrain.data.model.GeneratedIncidentDraft
 import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.theme.*
 
@@ -43,6 +45,8 @@ fun ChatbotScreen(
     onSendQuestion: () -> Unit,
     onConfirmExternalSearch: () -> Unit = {},
     onCancelExternalSearch: () -> Unit = {},
+    hasPendingAction: Boolean = false,
+    onCreateDraftIncident: (GeneratedIncidentDraft) -> Unit = {},
     onClearConversation: () -> Unit,
     onOpenIncidentDetail: (Long) -> Unit,
     onNavigateToHome: () -> Unit = {},
@@ -127,11 +131,14 @@ fun ChatbotScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(messages) { message ->
+                            val isLast = messages.lastOrNull() == message
                             ChatBubble(
                                 message = message, 
                                 onOpenDetail = onOpenIncidentDetail,
                                 onConfirmExternal = onConfirmExternalSearch,
-                                onCancelExternal = onCancelExternalSearch
+                                onCancelExternal = onCancelExternalSearch,
+                                showActionButtons = isLast && hasPendingAction,
+                                onCreateDraft = onCreateDraftIncident
                             )
                         }
                         if (isLoading) {
@@ -218,7 +225,9 @@ private fun ChatBubble(
     message: ChatMessage,
     onOpenDetail: (Long) -> Unit,
     onConfirmExternal: () -> Unit,
-    onCancelExternal: () -> Unit
+    onCancelExternal: () -> Unit,
+    showActionButtons: Boolean = false,
+    onCreateDraft: (GeneratedIncidentDraft) -> Unit = {}
 ) {
     val alignment = if (message.isUser) Alignment.End else Alignment.Start
     val bgColor = if (message.isUser) SticBlue else SticSky
@@ -234,7 +243,7 @@ private fun ChatBubble(
                     fontSize = 14.sp
                 )
 
-                if (message.requiresUserConfirmation) {
+                if (showActionButtons) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
@@ -242,7 +251,7 @@ private fun ChatBubble(
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = SticBlue)
                         ) {
-                            Text("Buscar información externa", fontSize = 12.sp)
+                            Text("Buscar solución externa con Gemini", fontSize = 12.sp)
                         }
                         OutlinedButton(
                             onClick = onCancelExternal,
@@ -251,6 +260,35 @@ private fun ChatBubble(
                         ) {
                             Text("Mantener solo local", fontSize = 12.sp, color = SticBlue)
                         }
+                    }
+                }
+
+                if (!message.isUser && message.usedExternalAi) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Esta respuesta procede de información externa. Revísala antes de guardarla.",
+                        fontSize = 11.sp,
+                        color = Color.Red.copy(alpha = 0.7f),
+                        lineHeight = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { 
+                            // Reconstruimos el borrador si no está presente en el mensaje persistido
+                            val draft = message.generatedIncidentDraft ?: GeneratedIncidentDraft(
+                                originalQuestion = "Consulta sobre: ${message.text.take(30)}...",
+                                generatedAnswer = message.text,
+                                suggestedTitle = "Solución sugerida por Gemini"
+                            )
+                            onCreateDraft(draft)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = SticSky),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = SticBlue)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Crear ficha provisional", fontSize = 12.sp, color = SticBlue)
                     }
                 }
             }

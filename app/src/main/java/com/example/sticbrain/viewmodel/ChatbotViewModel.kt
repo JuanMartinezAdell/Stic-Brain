@@ -16,6 +16,7 @@ import com.example.sticbrain.data.model.ChatbotPendingAction
 import com.example.sticbrain.data.model.ChatbotPendingActionType
 import com.example.sticbrain.data.model.ChatbotResponseStyle
 import com.example.sticbrain.data.model.ChatMessage
+import com.example.sticbrain.data.model.GeneratedIncidentDraft
 import com.example.sticbrain.data.repository.ChatbotConfigRepository
 import com.example.sticbrain.data.repository.ChatMessageRepository
 import com.example.sticbrain.data.repository.IncidenciaRepository
@@ -181,27 +182,8 @@ class ChatbotViewModel(
 
                     val idsRelacionados = engineResult.relatedIncidents.map { it.incidenciaId }.joinToString(",").ifBlank { null }
                     
-                    // Creamos el mensaje pero con el flag de confirmación (esto es temporal en memoria para la sesión)
-                    // Para que aparezca en la UI actual lo añadimos a la lista _messages directamente
-                    val botConfirmMessage = ChatMessage(
-                        text = engineResult.answer,
-                        isUser = false,
-                        relatedIncidents = engineResult.relatedIncidents.map {
-                            com.example.sticbrain.data.model.ChatbotIncidentResult(
-                                incidenciaId = it.incidenciaId,
-                                tituloNombre = it.tituloNombre,
-                                categoria = it.categoria,
-                                nivelPrioridad = it.nivelPrioridad,
-                                procedimientoResumen = it.procedimientoResumen,
-                                puntuacion = it.puntuacion
-                            )
-                        },
-                        confidence = engineResult.confidence,
-                        requiresUserConfirmation = true,
-                        pendingAction = pending
-                    )
-                    
-                    // Persistimos el mensaje sin los botones (o podríamos añadir lógica para no persistirlos)
+                    // Persistimos el mensaje. El flag requiresUserConfirmation se manejará en la UI
+                    // comparando con _pendingAction.
                     chatMessageRepository.insertarMensaje(
                         ChatMessageEntity(
                             text = engineResult.answer,
@@ -248,6 +230,20 @@ class ChatbotViewModel(
         }
     }
 
+    private fun crearOpcionesDesdeConfiguracion(config: com.example.sticbrain.data.local.entity.ChatbotConfigEntity?): ChatbotGenerationOptions {
+        return if (config != null) {
+            ChatbotGenerationOptions(
+                maxContextIncidents = config.maxContextIncidents,
+                responseStyle = runCatching { ChatbotResponseStyle.valueOf(config.responseStyle) }
+                    .getOrDefault(ChatbotResponseStyle.PROCEDIMIENTO_PASO_A_PASO),
+                detailLevel = runCatching { ChatbotDetailLevel.valueOf(config.detailLevel) }
+                    .getOrDefault(ChatbotDetailLevel.MEDIO)
+            )
+        } else {
+            ChatbotGenerationOptions()
+        }
+    }
+
     /**
      * Confirma la búsqueda de información externa mediante Gemini.
      */
@@ -255,6 +251,7 @@ class ChatbotViewModel(
         val action = _pendingAction.value ?: return
         if (action.type != ChatbotPendingActionType.CONFIRM_EXTERNAL_SEARCH) return
 
+        val originalQuestion = action.originalQuestion
         _pendingAction.value = null
         _isLoading.value = true
 
@@ -274,7 +271,7 @@ class ChatbotViewModel(
                 if (apiKey.isNullOrBlank()) {
                     chatMessageRepository.insertarMensaje(
                         ChatMessageEntity(
-                            text = "Para buscar información externa necesitas configurar primero tu API key de Gemini en Ajustes > Configuración del chatbot.",
+                            text = "No puedo buscar información externa porque no hay una API key de Gemini configurada.\n\nVe a Ajustes > Configuración del chatbot e introduce tu API key.",
                             isUser = false
                         )
                     )
@@ -283,18 +280,14 @@ class ChatbotViewModel(
 
                 val apiClient = GeminiApiClient(apiKey, config?.geminiModel ?: "gemini-1.5-flash")
                 val externalEngine = GeminiExternalSearchEngine(apiClient)
+                val options = crearOpcionesDesdeConfiguracion(config)
 
-                val options = if (config != null) {
-                    ChatbotGenerationOptions(
-                        maxContextIncidents = config.maxContextIncidents,
-                        responseStyle = ChatbotResponseStyle.valueOf(config.responseStyle),
-                        detailLevel = ChatbotDetailLevel.valueOf(config.detailLevel)
-                    )
-                } else {
-                    ChatbotGenerationOptions()
-                }
+                val result = externalEngine.generateExternalSolution(originalQuestion, options)
 
-                val result = externalEngine.generateExternalSolution(action.originalQuestion, options)
+                val draft = crearBorradorDesdeRespuestaExterna(
+                    preguntaOriginal = originalQuestion,
+                    respuestaGemini = result.answer
+                )
 
                 chatMessageRepository.insertarMensaje(
                     ChatMessageEntity(
@@ -304,10 +297,17 @@ class ChatbotViewModel(
                         confidence = result.confidence
                     )
                 )
+                
+                // NOTA: Para que el botón aparezca en la UI de la sesión actual, 
+                // ya que los mensajes se recargan de Room y ChatMessageEntity no guarda el draft,
+                // podríamos necesitar una forma de indicar que el último mensaje es de Gemini externo.
+                // En este flujo, el mensaje persistido NO tiene el draft, pero la UI lo detectará
+                // si el mensaje tiene usedExternalAi = true.
+                
             } catch (e: Exception) {
                 chatMessageRepository.insertarMensaje(
                     ChatMessageEntity(
-                        text = "Error al realizar la búsqueda externa: ${e.localizedMessage}",
+                        text = "Se ha producido un error al buscar información externa con Gemini: ${e.localizedMessage}",
                         isUser = false
                     )
                 )
@@ -315,6 +315,34 @@ class ChatbotViewModel(
                 _isLoading.value = false
             }
         }
+    }
+
+    /**
+     * Crea un borrador de ficha técnica a partir de una respuesta externa.
+     */
+    private fun crearBorradorDesdeRespuestaExterna(
+        preguntaOriginal: String,
+        respuestaGemini: String
+    ): GeneratedIncidentDraft {
+        val tituloSugerido = preguntaOriginal
+            .take(60)
+            .replaceFirstChar { it.uppercase() }
+
+        val palabrasClave = preguntaOriginal
+            .lowercase()
+            .replace(Regex("[^a-záéíóúñ0-9\\s]"), " ")
+            .split(" ")
+            .filter { it.length >= 4 }
+            .distinct()
+            .take(6)
+            .joinToString(", ")
+
+        return GeneratedIncidentDraft(
+            originalQuestion = preguntaOriginal,
+            generatedAnswer = respuestaGemini,
+            suggestedTitle = tituloSugerido,
+            suggestedKeywords = palabrasClave
+        )
     }
 
     /**

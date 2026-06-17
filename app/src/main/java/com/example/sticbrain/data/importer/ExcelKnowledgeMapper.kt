@@ -16,6 +16,9 @@ fun ExcelKnowledgeRow.toIncidenciaEntity(): IncidenciaEntity {
         nivelPrioridad = this.nivelPrioridad,
         notasComentarios = this.notasComentarios,
         fechaCreacion = System.currentTimeMillis(),
-        fechaModificacion = null
+        fechaModificacion = null,
+        esProvisional = false,
+        origen = "IMPORTACION_EXCEL",
+        revisada = true
     )
 }

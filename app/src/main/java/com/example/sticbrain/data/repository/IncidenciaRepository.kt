@@ -59,4 +59,11 @@ class IncidenciaRepository(private val incidenciaDao: IncidenciaDao) {
     suspend fun obtenerIncidenciasPorIds(ids: List<Long>): List<IncidenciaEntity> {
         return incidenciaDao.obtenerIncidenciasPorIds(ids)
     }
+
+    /**
+     * Marca una ficha como revisada.
+     */
+    suspend fun marcarComoRevisada(id: Long) {
+        incidenciaDao.marcarComoRevisada(id)
+    }
 }

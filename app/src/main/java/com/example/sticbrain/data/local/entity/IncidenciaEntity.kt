@@ -42,5 +42,14 @@ data class IncidenciaEntity(
     val fechaCreacion: Long = System.currentTimeMillis(),
     
     /** Marca de tiempo de la última vez que se editó */
-    val fechaModificacion: Long? = null
+    val fechaModificacion: Long? = null,
+
+    /** Indica si esta ficha ha sido generada automáticamente y todavía necesita revisión humana. */
+    val esProvisional: Boolean = false,
+
+    /** Indica el origen de la ficha. Ejemplos: LOCAL, IMPORTACION_EXCEL, GEMINI_EXTERNO. */
+    val origen: String = "LOCAL",
+
+    /** Indica si la ficha ya ha sido revisada por el usuario. */
+    val revisada: Boolean = true
 )

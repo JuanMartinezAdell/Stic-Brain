@@ -32,6 +32,7 @@ fun IncidentDetailScreen(
     incidencia: IncidenciaEntity?,
     onNavigateBack: () -> Unit = {},
     onDeleteIncident: () -> Unit = {},
+    onMarkAsReviewed: (Long) -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToNewIncident: () -> Unit = {},
@@ -87,11 +88,46 @@ fun IncidentDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = incidencia.categoria, color = SticBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(text = incidencia.categoria, color = SticBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    if (incidencia.esProvisional) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Surface(color = SticRed, shape = RoundedCornerShape(4.dp)) {
+                                            Text(text = "PROVISIONAL", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                }
+                                if (incidencia.origen == "GEMINI_EXTERNO") {
+                                    Text(text = "Origen: Gemini Externo", color = SticTextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
                             PriorityBadge(priority = incidencia.nivelPrioridad)
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = incidencia.tituloNombre, color = SticTextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (incidencia.esProvisional) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        SticCard(containerColor = Color(0xFFFFF3E0)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.WarningAmber, contentDescription = null, tint = Color(0xFFE65100))
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Revisión pendiente", color = Color(0xFFE65100), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = "Esta ficha fue generada desde una fuente externa y debe validarse.", color = Color(0xFFE65100), fontSize = 12.sp)
+                                }
+                                Button(
+                                    onClick = { onMarkAsReviewed(incidencia.id) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100)),
+                                    contentPadding = PaddingValues(horizontal = 12.dp),
+                                    modifier = Modifier.height(36.dp)
+                                ) {
+                                    Text("Validar", fontSize = 12.sp)
+                                }
+                            }
+                        }
                     }
                     
                     SectionTitle(text = "DESCRIPCIÓN", icon = Icons.Default.Description)

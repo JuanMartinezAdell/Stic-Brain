@@ -97,13 +97,14 @@ fun SticTopHeader(
 fun SticCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    containerColor: Color = SticSurface,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-        color = SticSurface,
+        color = containerColor,
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, SticBorder),
         shadowElevation = 1.dp

@@ -20,7 +20,8 @@ class ExcelExporterImpl : ExcelExporter {
             val headers = listOf(
                 "ID", "Categoría", "Título / Nombre", "Descripción", 
                 "Frases de Usuario", "Procedimiento / Respuesta", 
-                "Palabras clave", "Nivel de prioridad", "Notas / Comentarios"
+                "Palabras clave", "Nivel de prioridad", "Notas / Comentarios",
+                "Es Provisional", "Origen", "Revisada"
             )
             
             headers.forEachIndexed { index, title ->
@@ -39,6 +40,9 @@ class ExcelExporterImpl : ExcelExporter {
                 row.createCell(6).setCellValue(incidencia.palabrasClave)
                 row.createCell(7).setCellValue(incidencia.nivelPrioridad)
                 row.createCell(8).setCellValue(incidencia.notasComentarios ?: "")
+                row.createCell(9).setCellValue(if (incidencia.esProvisional) "SÍ" else "NO")
+                row.createCell(10).setCellValue(incidencia.origen)
+                row.createCell(11).setCellValue(if (incidencia.revisada) "SÍ" else "NO")
                 exportadas++
             }
 

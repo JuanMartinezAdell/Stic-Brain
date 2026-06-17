@@ -198,6 +198,7 @@ fun AppNavigation() {
             val currentQuestion by chatbotViewModel.currentQuestion.collectAsState()
             val isLoading by chatbotViewModel.isLoading.collectAsState()
             val modeLabel by chatbotViewModel.currentModeLabel.collectAsState()
+            val pendingAction by chatbotViewModel.pendingAction.collectAsState()
 
             ChatbotScreen(
                 messages = messages,
@@ -208,6 +209,11 @@ fun AppNavigation() {
                 onSendQuestion = chatbotViewModel::sendQuestion,
                 onConfirmExternalSearch = chatbotViewModel::confirmExternalSearch,
                 onCancelExternalSearch = chatbotViewModel::cancelExternalSearch,
+                hasPendingAction = pendingAction != null,
+                onCreateDraftIncident = { draft ->
+                    incidenciaViewModel.setGeneratedDraft(draft)
+                    navController.navigate(AppScreens.IncidenciaCrear.route)
+                },
                 onClearConversation = chatbotViewModel::clearConversation,
                 onOpenIncidentDetail = { id ->
                     navController.navigate(AppScreens.IncidenciaDetalle.createRoute(id)) {
@@ -275,19 +281,33 @@ fun AppNavigation() {
         // PANTALLA DE NUEVA ENTRADA (FICHA)
         composable(AppScreens.IncidenciaCrear.route) {
             val categorias by categoriaViewModel.categoriasActivas.collectAsState()
+            val generatedDraft by incidenciaViewModel.generatedDraft.collectAsState()
+            
             NewIncidentScreen(
                 categorias = categorias,
+                generatedDraft = generatedDraft,
                 onNavigateToHome = {
+                    incidenciaViewModel.clearGeneratedDraft()
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSearch = { navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } },
-                onNavigateToSupport = { navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } },
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSearch = { 
+                    incidenciaViewModel.clearGeneratedDraft()
+                    navController.navigate(AppScreens.Busqueda.route) { launchSingleTop = true } 
+                },
+                onNavigateToSupport = { 
+                    incidenciaViewModel.clearGeneratedDraft()
+                    navController.navigate(AppScreens.Proveedores.route) { launchSingleTop = true } 
+                },
+                onNavigateBack = { 
+                    incidenciaViewModel.clearGeneratedDraft()
+                    navController.popBackStack() 
+                },
                 onSaveIncident = { incidencia ->
                     incidenciaViewModel.insertarIncidencia(incidencia)
+                    incidenciaViewModel.clearGeneratedDraft()
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }
                         launchSingleTop = true
@@ -314,6 +334,7 @@ fun AppNavigation() {
                         navController.popBackStack()
                     }
                 },
+                onMarkAsReviewed = { incidenciaViewModel.marcarComoRevisada(it) },
                 onNavigateToHome = {
                     navController.navigate(AppScreens.Home.route) {
                         popUpTo(AppScreens.Home.route) { inclusive = false }

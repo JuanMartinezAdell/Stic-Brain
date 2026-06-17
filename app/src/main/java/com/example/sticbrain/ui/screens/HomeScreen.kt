@@ -245,6 +245,7 @@ fun IncidentsListSection(
                         priority = incidencia.nivelPrioridad,
                         keywords = incidencia.palabrasClave.split(",").filter { it.isNotBlank() }.map { it.trim() },
                         procedure = incidencia.procedimientoRespuesta,
+                        isProvisional = incidencia.esProvisional,
                         onClick = { onIncidentClick(incidencia.id) }
                     )
                 }
@@ -261,11 +262,20 @@ fun IncidentEntryCard(
     priority: String,
     keywords: List<String>,
     procedure: String,
+    isProvisional: Boolean = false,
     onClick: () -> Unit
 ) {
     SticCard(onClick = onClick) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(text = category, color = SticBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = category, color = SticBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                if (isProvisional) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(color = SticRed, shape = RoundedCornerShape(4.dp)) {
+                        Text(text = "PROV.", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp))
+                    }
+                }
+            }
             PriorityBadge(priority = priority)
         }
         

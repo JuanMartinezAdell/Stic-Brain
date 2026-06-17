@@ -8,6 +8,7 @@ import com.example.sticbrain.data.local.entity.IncidenciaEntity
 import com.example.sticbrain.data.importer.*
 import com.example.sticbrain.data.exporter.ExcelExportResult
 import com.example.sticbrain.data.exporter.ExcelExporter
+import com.example.sticbrain.data.model.GeneratedIncidentDraft
 import com.example.sticbrain.data.repository.IncidenciaRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,6 +54,10 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
     /** Estado reactivo para informar sobre el progreso de la exportación a Excel. */
     val exportUiState: StateFlow<ExportUiState> = _exportUiState.asStateFlow()
 
+    private val _generatedDraft = MutableStateFlow<GeneratedIncidentDraft?>(null)
+    /** Borrador temporal generado por el chatbot para ser revisado en el formulario. */
+    val generatedDraft: StateFlow<GeneratedIncidentDraft?> = _generatedDraft.asStateFlow()
+
     /** 
      * Lista reactiva de incidencias. Combina búsqueda, filtros y carga general.
      * Siempre se mantiene actualizada automáticamente gracias a los flujos (Flows).
@@ -75,6 +80,14 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    fun setGeneratedDraft(draft: GeneratedIncidentDraft) {
+        _generatedDraft.value = draft
+    }
+
+    fun clearGeneratedDraft() {
+        _generatedDraft.value = null
+    }
 
     /** Establece un texto para filtrar las incidencias. */
     fun buscarIncidencias(query: String) {
@@ -186,6 +199,13 @@ class IncidenciaViewModel(private val repository: IncidenciaRepository) : ViewMo
     fun eliminarIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
             repository.eliminarIncidencia(incidencia)
+        }
+    }
+
+    /** Marca una ficha provisional como revisada definitivamente. */
+    fun marcarComoRevisada(id: Long) {
+        viewModelScope.launch {
+            repository.marcarComoRevisada(id)
         }
     }
 

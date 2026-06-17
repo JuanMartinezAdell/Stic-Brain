@@ -21,7 +21,7 @@ import com.example.sticbrain.data.local.entity.*
         ChatMessageEntity::class,
         ChatbotConfigEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class SticBrainDatabase : RoomDatabase() {

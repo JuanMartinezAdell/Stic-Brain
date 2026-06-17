@@ -19,26 +19,26 @@ class GeminiChatbotEngine(
         options: ChatbotGenerationOptions
     ): ChatbotEngineResult {
         
-        // 1. Ranking local
-        val rankedIncidents = localEngine.rankIncidents(question, incidencias)
+        // 1. Verificamos primero si hay información local suficiente
+        // Reutilizamos el motor local para evaluar el contexto
+        val localResult = localEngine.generateResponse(question, incidencias, options)
         
-        if (rankedIncidents.isEmpty()) {
-            return ChatbotEngineResult(
-                answer = "No he encontrado fichas técnicas relacionadas con tu consulta.",
-                usedExternalAi = false
-            )
+        // Si el motor local determina que no hay información suficiente,
+        // devolvemos su resultado para que se pida confirmación externa.
+        if (localResult.needsExternalSearchConfirmation) {
+            return localResult
         }
-
-        val topIncidents = rankedIncidents.take(options.maxContextIncidents)
         
-        // 2. Contexto enriquecido
+        // 2. Si hay información local, procedemos con Gemini y el contexto local
+        val topIncidents = localResult.relatedIncidents.take(options.maxContextIncidents)
+        
         val fullIncidents = topIncidents.mapNotNull { result ->
             incidencias.find { it.id == result.incidenciaId }
         }
         
         val context = buildGeminiContext(fullIncidents)
 
-        // 3. Llamada a Gemini
+        // 3. Llamada a Gemini con el contexto de las fichas encontradas
         val geminiAnswer = apiClient.generateContent(question, context, options)
 
         // 4. Resultado estructurado
@@ -48,7 +48,9 @@ class GeminiChatbotEngine(
             usedExternalAi = true,
             confidence = extraerNivelConfianza(geminiAnswer),
             mainIncidentId = topIncidents.firstOrNull()?.incidenciaId,
-            alternativeIncidentIds = topIncidents.drop(1).map { it.incidenciaId }
+            alternativeIncidentIds = topIncidents.drop(1).map { it.incidenciaId },
+            hasEnoughLocalInformation = true,
+            needsExternalSearchConfirmation = false
         )
     }
 

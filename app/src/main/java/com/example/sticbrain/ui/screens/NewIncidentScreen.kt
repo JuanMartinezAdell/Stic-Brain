@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sticbrain.data.local.entity.CategoriaEntity
 import com.example.sticbrain.data.local.entity.IncidenciaEntity
+import com.example.sticbrain.data.model.GeneratedIncidentDraft
 import com.example.sticbrain.ui.components.*
 import com.example.sticbrain.ui.theme.*
 
@@ -30,6 +31,7 @@ import com.example.sticbrain.ui.theme.*
 @Composable
 fun NewIncidentScreen(
     categorias: List<CategoriaEntity>,
+    generatedDraft: GeneratedIncidentDraft? = null,
     onNavigateToHome: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToSupport: () -> Unit = {},
@@ -45,6 +47,24 @@ fun NewIncidentScreen(
     var keywords by remember { mutableStateOf("") }
     var priority by remember { mutableStateOf("Normal") }
     var notes by remember { mutableStateOf("") }
+
+    // Flag para saber si hemos cargado el borrador inicial
+    var draftLoaded by remember { mutableStateOf(false) }
+
+    // Carga del borrador si existe
+    LaunchedEffect(generatedDraft) {
+        if (generatedDraft != null && !draftLoaded) {
+            category = generatedDraft.suggestedCategory
+            title = generatedDraft.suggestedTitle
+            description = generatedDraft.originalQuestion
+            userPhrases = generatedDraft.originalQuestion
+            procedure = generatedDraft.generatedAnswer
+            keywords = generatedDraft.suggestedKeywords
+            priority = generatedDraft.suggestedPriority
+            notes = "Ficha provisional generada automáticamente a partir de una respuesta externa de Gemini.\nDebe revisarse antes de considerarse definitiva."
+            draftLoaded = true
+        }
+    }
 
     // Estados para controlar errores de validación
     var categoryError by remember { mutableStateOf(false) }
@@ -184,7 +204,10 @@ fun NewIncidentScreen(
                                 palabrasClave = keywords,
                                 nivelPrioridad = priority,
                                 notasComentarios = notes,
-                                fechaCreacion = System.currentTimeMillis()
+                                fechaCreacion = System.currentTimeMillis(),
+                                esProvisional = generatedDraft != null,
+                                origen = if (generatedDraft != null) "GEMINI_EXTERNO" else "LOCAL",
+                                revisada = generatedDraft == null
                             )
                             onSaveIncident(nuevaIncidencia)
                         }

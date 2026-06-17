@@ -118,6 +118,7 @@ fun SearchIncidentScreen(
                                 priority = entry.nivelPrioridad,
                                 keywords = entry.palabrasClave.split(",").filter { it.isNotBlank() }.map { it.trim() },
                                 procedure = entry.procedimientoRespuesta,
+                                isProvisional = entry.esProvisional,
                                 onClick = { onNavigateToIncidentDetail(entry.id) }
                             )
                         }
